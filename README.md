@@ -3,7 +3,7 @@
 ## Build
 
 ```
-git clone --recursive $repo-url
+git clone --recursive https://github.com/rhkang/gfx-study.git
 git submodule init
 git submodule update
 ```
