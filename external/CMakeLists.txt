@@ -1,0 +1,34 @@
+set(THIRDPARTY_DIR "thirdparty")
+
+find_package(Vulkan REQUIRED)
+find_package(SDL2 REQUIRED)
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+
+message(STATUS "Assimp install = ${ASSIMP_INSTALL}")
+
+add_subdirectory(assimp)
+
+add_subdirectory(vma)
+add_subdirectory(spdlog)
+add_subdirectory(glm)
+
+set(IMGUI_PATH "${CMAKE_SOURCE_DIR}/external/imgui")
+set(IMGUI_INCLUDE_DIRS ${IMGUI_PATH} ${IMGUI_PATH}/backends)
+
+file(GLOB IMGUI_SRC CONFIGURE_DEPENDS
+    ${IMGUI_PATH}/*.h
+    ${IMGUI_PATH}/*.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_vulkan.h
+    ${IMGUI_PATH}/backends/imgui_impl_vulkan.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_sdl2.h
+    ${IMGUI_PATH}/backends/imgui_impl_sdl2.cpp
+)
+add_library("imgui" STATIC ${IMGUI_SRC})
+target_include_directories("imgui" PUBLIC ${IMGUI_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} ${SDL2_INCLUDE_DIRS})
+target_link_libraries("imgui" PUBLIC
+  ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES}
+)
