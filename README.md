@@ -1,14 +1,14 @@
 # Gfx study
 
-## Build
-
+## Start
 ```
 git clone --recursive https://github.com/rhkang/gfx-study.git
 git submodule init
 git submodule update
 ```
 
-Install SDL2
+### Install
+#### SDL2
 ```
 cd external/sdl
 mkdir build
@@ -18,7 +18,15 @@ cmake --build . --config Release
 cmake --install .
 ```
 
-Build
+### Vulkan
+Required SDK Version : 1.3 or above (https://vulkan.lunarg.com/)
+
+Required Features
+- samplerAnisotropy
+- dynamicRendering
+- sampleRateShading
+
+### Build Project
 ```
 cmake -S . -B build
 
@@ -29,10 +37,5 @@ cmake --build build
 cmake --build build --config Release
 ```
 
-## Vulkan
-Required Version : 1.3 or above
-
-Required Features
-- samplerAnisotropy
-- dynamicRendering
-- sampleRateShading
+## Troubleshooting
+- Windows에서 SDL2.dll 못 찾을 경우 설치 경로 환경변수에 추가 (C:\Program Files (x86)\SDL2\bin 확인)
