@@ -18,7 +18,7 @@ UiLayout::~UiLayout()
 void UiLayout::init()
 {
 	std::vector<vk::DescriptorPoolSize> poolSizes = {
-		{ vk::DescriptorType::eCombinedImageSampler, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE }
+		{ vk::DescriptorType::eCombinedImageSampler, 20 },
 	};
 
 	uint32_t maxSets = 0;

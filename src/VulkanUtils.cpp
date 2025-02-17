@@ -164,9 +164,16 @@ vk::Pipeline VulkanPipelineBuilder::build()
 	vk::PipelineRenderingCreateInfo pipelineRenderingCI{
 		.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentFormats.size()),
 		.pColorAttachmentFormats = colorAttachmentFormats.data(),
-		.depthAttachmentFormat = depthStencilFormat,
-		.stencilAttachmentFormat = depthStencilFormat,
 	};
+
+	if (depthAttachmentFormat != vk::Format::eUndefined)
+	{
+		pipelineRenderingCI.depthAttachmentFormat = depthAttachmentFormat;
+	}
+	if (stencilAttachmentFormat != vk::Format::eUndefined)
+	{
+		pipelineRenderingCI.stencilAttachmentFormat = stencilAttachmentFormat;
+	}
 
 	vk::GraphicsPipelineCreateInfo pipelineCI{
 		.pNext = &pipelineRenderingCI,
@@ -235,7 +242,7 @@ void VulkanTexture::loadFromFile(const char *filename)
 	createSampler();
 
 	auto cmdBuffer = vulkanDevice->allocateCommandBuffer();
-	imageLayoutTransition(cmdBuffer,
+	imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eColor,
 						  vk::PipelineStageFlagBits::eTopOfPipe,
 						  vk::PipelineStageFlagBits::eTransfer,
 						  vk::AccessFlagBits::eNone,
@@ -400,9 +407,9 @@ void VulkanTexture::createSampler()
 		.magFilter = vk::Filter::eLinear,
 		.minFilter = vk::Filter::eLinear,
 		.mipmapMode = vk::SamplerMipmapMode::eLinear,
-		.addressModeU = vk::SamplerAddressMode::eRepeat,
-		.addressModeV = vk::SamplerAddressMode::eRepeat,
-		.addressModeW = vk::SamplerAddressMode::eRepeat,
+		.addressModeU = addressMode,
+		.addressModeV = addressMode,
+		.addressModeW = addressMode,
 		.mipLodBias = 0.0f,
 		.anisotropyEnable = vk::True,
 		.maxAnisotropy = properties.limits.maxSamplerAnisotropy,
@@ -424,12 +431,8 @@ void VulkanTexture::destroy()
 	vmaDestroyImage(vulkanDevice->allocator, image, allocation);
 }
 
-void imageLayoutTransition(vk::CommandBuffer cmdBuffer, vk::PipelineStageFlagBits srcStageMask, vk::PipelineStageFlagBits dstStageMask, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::Image image, uint32_t mipLevels)
+void imageLayoutTransition(vk::CommandBuffer cmdBuffer, vk::ImageAspectFlags imageAspectFlags, vk::PipelineStageFlagBits srcStageMask, vk::PipelineStageFlagBits dstStageMask, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::Image image, uint32_t mipLevels)
 {
-	vk::ImageAspectFlags imageAspectFlags = (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) ? 
-		vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil :
-		vk::ImageAspectFlagBits::eColor;
-
 	vk::ImageMemoryBarrier imageBarrier{
 		.srcAccessMask = srcAccessMask,
 		.dstAccessMask = dstAccessMask,

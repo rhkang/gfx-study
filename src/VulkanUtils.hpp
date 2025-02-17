@@ -57,6 +57,7 @@ struct VulkanTexture
 	vk::Sampler sampler;
 
 	vk::SampleCountFlagBits sampleCount = vk::SampleCountFlagBits::e1;
+	vk::SamplerAddressMode addressMode = vk::SamplerAddressMode::eRepeat;
 
 	uint32_t mipLevels = 1;
 	float minLod = 0.0f;
@@ -112,7 +113,8 @@ public:
 	std::vector<vk::Format> colorAttachmentFormats;
 
 	vk::Format colorFormat = vk::Format::eB8G8R8A8Srgb;
-	vk::Format depthStencilFormat = vk::Format::eD32SfloatS8Uint;
+	vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;
+	vk::Format stencilAttachmentFormat = vk::Format::eUndefined;
 
 	vk::GraphicsPipelineCreateInfo graphicsPipelineCI{};
 
@@ -137,7 +139,7 @@ private:
 	vk::PipelineLayout layout;
 };
 
-void imageLayoutTransition(vk::CommandBuffer cmdBuffer, vk::PipelineStageFlagBits srcStageMask, vk::PipelineStageFlagBits dstStageMask, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::Image image, uint32_t mipLevels = 1);
+void imageLayoutTransition(vk::CommandBuffer cmdBuffer, vk::ImageAspectFlags imageAspectFlags, vk::PipelineStageFlagBits srcStageMask, vk::PipelineStageFlagBits dstStageMask, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::Image image, uint32_t mipLevels = 1);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 												vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
