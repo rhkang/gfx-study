@@ -23,7 +23,6 @@ if not exist "%dxc%" (
     echo Compiler : !dxc!
 )
 
-:: Get argument from PowerShell or use default
 set "root=%~1"
 if "%root%"=="" (
     set "root=%~dp0../shaders"
@@ -39,6 +38,11 @@ if not exist "%root%" (
 
 echo Root Directory : %root%
 echo.
+
+:: Ensure the output directory exists
+if not exist "%root%\out" (
+    mkdir "%root%\out"
+)
 
 :: Call the process_directory function for root
 call :process_directory "%root%"

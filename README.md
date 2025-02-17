@@ -37,5 +37,12 @@ cmake --build build
 cmake --build build --config Release
 ```
 
+### Shader Compile
+```
+> scripts/hlsl_compile.bat
+```
+
+Currently work on Windows only (hlsl -> SPIR-V)
+
 ## Troubleshooting
 - Windows에서 SDL2.dll 못 찾을 경우 설치 경로 환경변수에 추가 (C:\Program Files (x86)\SDL2\bin 확인)
