@@ -275,7 +275,7 @@ void Application::drawFrame()
 	cmdBuffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, queryPool, 0);
 
 	imageLayoutTransition(
-		cmdBuffer,
+		cmdBuffer, vk::ImageAspectFlagBits::eColor,
 		vk::PipelineStageFlagBits::eTopOfPipe,
 		vk::PipelineStageFlagBits::eColorAttachmentOutput,
 		vk::AccessFlagBits::eNone,
@@ -309,7 +309,7 @@ void Application::drawFrame()
 	cmdBuffer.endRendering();
 
 	imageLayoutTransition(
-		cmdBuffer,
+		cmdBuffer, vk::ImageAspectFlagBits::eColor,
 		vk::PipelineStageFlagBits::eColorAttachmentOutput,
 		vk::PipelineStageFlagBits::eBottomOfPipe,
 		vk::AccessFlagBits::eColorAttachmentWrite,
@@ -433,7 +433,7 @@ void Application::allocateDepthStencilTexture()
 	depthStencilTexture.createSampler();
 
 	auto cmdBuffer = vulkanDevice->allocateCommandBuffer();
-	imageLayoutTransition(cmdBuffer,
+	imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
 						  vk::PipelineStageFlagBits::eTopOfPipe,
 						  vk::PipelineStageFlagBits::eEarlyFragmentTests,
 						  vk::AccessFlagBits::eNone,
@@ -451,7 +451,7 @@ void Application::allocateMsaaTexture()
 	msaaTexture.createSampler();
 
 	auto cmdBuffer = vulkanDevice->allocateCommandBuffer();
-	imageLayoutTransition(cmdBuffer,
+	imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eColor,
 						  vk::PipelineStageFlagBits::eTopOfPipe,
 						  vk::PipelineStageFlagBits::eColorAttachmentOutput,
 						  vk::AccessFlagBits::eNone,
