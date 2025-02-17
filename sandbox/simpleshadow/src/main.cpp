@@ -83,7 +83,7 @@ private:
 
 	VkDescriptorSet shadowSetForImGui;
 
-	float shadowBias = 0.000005f;
+	float shadowBias = 0.000061035f;
 	bool enablePCF = true;
 
 	struct {
@@ -250,8 +250,8 @@ private:
 
 		imageLayoutTransition(
 			cmdBuffer, vk::ImageAspectFlagBits::eDepth, vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eVertexShader, vk::AccessFlagBits::eNone,
-			vk::AccessFlagBits::eShaderWrite, vk::ImageLayout::eUndefined,
+			vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eNone,
+			vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eDepthStencilAttachmentOptimal, shadowTexture.image);
 
 		vk::RenderingAttachmentInfo shadowAttachmentInfo{
@@ -304,8 +304,8 @@ private:
 		cmdBuffer.endRendering();
 
 		imageLayoutTransition(
-			cmdBuffer, vk::ImageAspectFlagBits::eDepth, vk::PipelineStageFlagBits::eVertexShader,
-			vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderWrite,
+			cmdBuffer, vk::ImageAspectFlagBits::eDepth, vk::PipelineStageFlagBits::eLateFragmentTests,
+			vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eDepthStencilAttachmentWrite,
 			vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eDepthStencilAttachmentOptimal,
 			vk::ImageLayout::eDepthReadOnlyOptimal, shadowTexture.image);
 
@@ -358,8 +358,6 @@ private:
 			cmdBuffer.drawIndexed(model.index.count, 1, model.index.startIndex, model.vertex.startIndex, 0);
 		}
 
-
-
 		cmdBuffer.endRendering();
 	}
 
@@ -383,7 +381,7 @@ private:
 		ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2);
 		
 		const int maxDivide = 40;
-		static int numDivide = 20;
+		static int numDivide = 14;
 		if (ImGui::SliderInt("##bias", &numDivide, 0, maxDivide))
 		{
 			shadowBias = 1.0f;
@@ -458,8 +456,6 @@ private:
 		VulkanPipelineBuilder finalImageBuilder(device);
 		auto finalImageVertShader = createShaderModule(device, "shadow.vert.spv");
 		auto finalImageFragShader = createShaderModule(device, "shadow.frag.spv");
-
-		//finalImageBuilder.rasterizationCI.frontFace = vk::FrontFace::eCounterClockwise;
 
 		finalImageBuilder.vertexInputCI.vertexAttributeDescriptionCount =
 			static_cast<uint32_t>(vertexAttribute.size());
