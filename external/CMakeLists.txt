@@ -15,6 +15,7 @@ add_subdirectory(assimp)
 add_subdirectory(vma)
 add_subdirectory(spdlog)
 add_subdirectory(glm)
+add_subdirectory(glfw)
 
 set(IMGUI_PATH "${CMAKE_SOURCE_DIR}/external/imgui")
 set(IMGUI_INCLUDE_DIRS ${IMGUI_PATH} ${IMGUI_PATH}/backends)
@@ -24,11 +25,11 @@ file(GLOB IMGUI_SRC CONFIGURE_DEPENDS
     ${IMGUI_PATH}/*.cpp
     ${IMGUI_PATH}/backends/imgui_impl_vulkan.h
     ${IMGUI_PATH}/backends/imgui_impl_vulkan.cpp
-    ${IMGUI_PATH}/backends/imgui_impl_sdl2.h
-    ${IMGUI_PATH}/backends/imgui_impl_sdl2.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_glfw.h
+    ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp
 )
 add_library("imgui" STATIC ${IMGUI_SRC})
-target_include_directories("imgui" PUBLIC ${IMGUI_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} ${SDL2_INCLUDE_DIRS})
+target_include_directories("imgui" PUBLIC ${IMGUI_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS} ${GLFW_INCLUDE_DIR})
 target_link_libraries("imgui" PUBLIC
-  ${SDL2_LIBRARIES} ${Vulkan_LIBRARIES}
+  glfw ${Vulkan_LIBRARIES}
 )

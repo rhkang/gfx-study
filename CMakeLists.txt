@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(ENGINE_NAME "Renderer")
+set(ENGINE_NAME "Engine")
 project(${ENGINE_NAME} VERSION 0.1.0)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -31,7 +31,7 @@ PUBLIC
     ${Vulkan_INCLUDE_DIRS}
     VulkanMemoryAllocator 
     ${CMAKE_SOURCE_DIR}/external/stb_image
-    ${SDL2_INCLUDE_DIRS}
+    ${GLFW_INCLUDE_DIR}
     assimp::assimp
 )
 target_link_libraries(${ENGINE_NAME}
@@ -41,7 +41,8 @@ PUBLIC
     GPUOpen::VulkanMemoryAllocator
     spdlog::spdlog
     imgui
-    glm::glm
+    glm
+    glfw
     assimp::assimp
     ${SDL2_LIBRARIES}
 )
