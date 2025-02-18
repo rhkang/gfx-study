@@ -60,7 +60,7 @@ namespace Engine
         queryPool = logicalDevice.createQueryPool({
             .queryType = vk::QueryType::eTimestamp,
             .queryCount = 2,
-            });
+        });
         timestampPeriod = physicalDevice.getProperties().limits.timestampPeriod;
 
         drawCmdBuffers = logicalDevice.allocateCommandBuffers({
@@ -76,7 +76,7 @@ namespace Engine
     {
         onDestroy();
 
-		auto logicalDevice = device->getLogicalDevice();
+        auto logicalDevice = device->getLogicalDevice();
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -91,19 +91,19 @@ namespace Engine
 
     void Renderer::prepare()
     {
-		onPrepare();
+        onPrepare();
     }
 
     void Renderer::update()
     {
-		onUpdate();
+        onUpdate();
     }
 
     void Renderer::render()
     {
         prepareFrame();
         drawFrame();
-		submitFrame();
+        submitFrame();
     }
 
     void Renderer::prepareFrame()
@@ -125,9 +125,9 @@ namespace Engine
 
     void Renderer::drawFrame()
     {
-        auto& cmdBuffer = getCurrentDrawCmdBuffer();
+        auto &cmdBuffer = getCurrentDrawCmdBuffer();
         cmdBuffer.reset();
-        cmdBuffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+        cmdBuffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
         cmdBuffer.resetQueryPool(queryPool, 0, 2);
         cmdBuffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, queryPool, 0);
 
@@ -146,9 +146,8 @@ namespace Engine
         vk::RenderingAttachmentInfo finalColorAttachmentInfo{
             .imageView = swapchain->getImageView(imageIndex),
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-            .loadOp = vk::AttachmentLoadOp::eClear,
+            .loadOp = vk::AttachmentLoadOp::eLoad,
             .storeOp = vk::AttachmentStoreOp::eStore,
-			.clearValue = vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}},
         };
 
         vk::RenderingInfo uiRenderingInfo{
@@ -183,13 +182,13 @@ namespace Engine
     void Renderer::submitFrame()
     {
         auto queue = device->getQueue();
-		auto logicalDevice = device->getLogicalDevice();
+        auto logicalDevice = device->getLogicalDevice();
 
-        vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-        vk::Semaphore waitSemaphores[] = { semaphores.imageAvailable[currentFrame] };
-        vk::Semaphore signalSemaphores[] = { semaphores.renderFinished[currentFrame] };
+        vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+        vk::Semaphore waitSemaphores[] = {semaphores.imageAvailable[currentFrame]};
+        vk::Semaphore signalSemaphores[] = {semaphores.renderFinished[currentFrame]};
 
-        queue.submit({ vk::SubmitInfo{
+        queue.submit({vk::SubmitInfo{
                          .waitSemaphoreCount = 1,
                          .pWaitSemaphores = waitSemaphores,
                          .pWaitDstStageMask = waitStages,
@@ -197,16 +196,16 @@ namespace Engine
                          .pCommandBuffers = &drawCmdBuffers[currentFrame],
                          .signalSemaphoreCount = 1,
                          .pSignalSemaphores = signalSemaphores,
-                     } },
+                     }},
                      fences.inFlight[currentFrame]);
 
-        vk::SwapchainKHR swapchains[] = { swapchain->getSwapchain() };
+        vk::SwapchainKHR swapchains[] = {swapchain->getSwapchain()};
         VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = reinterpret_cast<VkSemaphore*>(signalSemaphores),
+            .pWaitSemaphores = reinterpret_cast<VkSemaphore *>(signalSemaphores),
             .swapchainCount = 1,
-            .pSwapchains = reinterpret_cast<VkSwapchainKHR*>(swapchains),
+            .pSwapchains = reinterpret_cast<VkSwapchainKHR *>(swapchains),
             .pImageIndices = &imageIndex,
         };
 
