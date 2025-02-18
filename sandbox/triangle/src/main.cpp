@@ -38,6 +38,7 @@ public:
 			};
 		}
 	};
+
 private:
 	void onInit() override
 	{
@@ -52,12 +53,12 @@ private:
 	void prepareData()
 	{
 		std::vector<Vertex> vertices = {
-			{{0.0f, -0.5f, 0.0f}, {0.0f, 0.0f}, { 1.0f, 0.0f, 0.0f, 1.0f }},
+			{{0.0f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
 			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
 			{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
 		};
 
-		std::vector<uint16_t> indices = { 0, 1, 2 };
+		std::vector<uint16_t> indices = {0, 1, 2};
 
 		auto vbSize = sizeof(Vertex) * vertices.size();
 		vertexBuffer = device->createBuffer();
@@ -66,13 +67,13 @@ private:
 		auto stagingBuffer = device->createBuffer();
 		stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc);
 
-		void* data;
+		void *data;
 		vmaMapMemory(device->getAllocator(), stagingBuffer.allocation, &data);
 		std::memcpy(data, vertices.data(), vbSize);
 		vmaUnmapMemory(device->getAllocator(), stagingBuffer.allocation);
 
 		auto cmdBuffer = device->allocateCommandBuffer();
-		cmdBuffer.copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer, { vk::BufferCopy{0, 0, vbSize} });
+		cmdBuffer.copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer, {vk::BufferCopy{0, 0, vbSize}});
 		device->flushCommandBuffer(cmdBuffer);
 
 		stagingBuffer.destroy();
@@ -89,7 +90,7 @@ private:
 	void buildPipeline()
 	{
 		auto logicalDevice = device->getLogicalDevice();
-		VulkanPipelineBuilder pipelineBuilder(logicalDevice);
+		PipelineBuilder pipelineBuilder(logicalDevice);
 
 		auto vertShader = device->createShaderModule("triangle.vert.spv");
 		auto fragShader = device->createShaderModule("triangle.frag.spv");
@@ -117,7 +118,7 @@ private:
 		pipelineLayout = logicalDevice.createPipelineLayout({
 			.setLayoutCount = 0,
 			.pSetLayouts = nullptr,
-			});
+		});
 
 		pipelineBuilder.setLayout(pipelineLayout);
 		pipelineBuilder.shaderStages.push_back(vertexShaderStageCI);
@@ -139,7 +140,7 @@ private:
 
 	void draw() override
 	{
-		auto& cmdBuffer = getCurrentDrawCmdBuffer();
+		auto &cmdBuffer = getCurrentDrawCmdBuffer();
 
 		vk::RenderingAttachmentInfo colorAttachmentInfo{
 			.imageView = swapchain->getImageView(imageIndex),
@@ -161,7 +162,7 @@ private:
 
 		cmdBuffer.beginRendering(renderingInfo);
 		cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-		cmdBuffer.bindVertexBuffers(0, { vertexBuffer.buffer }, { 0 });
+		cmdBuffer.bindVertexBuffers(0, {vertexBuffer.buffer}, {0});
 		cmdBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint16);
 
 		auto extent = swapchain->getExtent();
@@ -185,11 +186,11 @@ private:
 
 int main()
 {
-    auto app = std::make_unique<App>();
+	auto app = std::make_unique<App>();
 	app->renderer = std::make_unique<SimpleRenderer>();
-    app->init();
-    app->mainLoop();
+	app->init();
+	app->mainLoop();
 	app->destroy();
 
-    return 0;
+	return 0;
 }
