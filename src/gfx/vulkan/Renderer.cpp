@@ -146,8 +146,9 @@ namespace Engine
         vk::RenderingAttachmentInfo finalColorAttachmentInfo{
             .imageView = swapchain->getImageView(imageIndex),
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-            .loadOp = vk::AttachmentLoadOp::eLoad,
+            .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
+			.clearValue = vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}},
         };
 
         vk::RenderingInfo uiRenderingInfo{

@@ -50,6 +50,7 @@ namespace Engine
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 		io.Fonts->AddFontFromFileTTF((std::string(RESOURCE_DIR) + "/fonts/" + fontName).c_str(), fontScale);
 
@@ -61,7 +62,7 @@ namespace Engine
 		};
 
 		GLFWwindow* window = (GLFWwindow*)device->getWindowHandle();
-		ImGui_ImplGlfw_InitForVulkan(window, false);
+		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_InitInfo init_info = {};
 		init_info.Instance = device->getInstance();
 		init_info.PhysicalDevice = device->getPhysicalDevice();

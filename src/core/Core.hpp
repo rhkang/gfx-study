@@ -51,10 +51,5 @@ namespace Engine
 			int button,
 			int action,
 			int mods) override;
-
-		void scrollCallback(
-			GLFWwindow* window,
-			double xOffset,
-			double yOffset) override;
 	};
 }

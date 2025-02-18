@@ -61,15 +61,5 @@ namespace Engine
 				instance->mouseButtonCallback(window, button, action, mods);
 			}
 		}
-
-		virtual void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) = 0;
-		static void scrollCallbackDispatch(GLFWwindow* window, double xoffset, double yoffset)
-		{
-			if (instance)
-			{
-				instance->scrollCallback(window, xoffset, yoffset);
-			}
-		}
-		
 	};
 }

@@ -37,7 +37,6 @@ namespace Engine
 		glfwSetKeyCallback((GLFWwindow*)window->getHandle(), EventBase::keyCallbackDispatch);
 		glfwSetWindowSizeCallback((GLFWwindow*)window->getHandle(), EventBase::resizeCallbackDispatch);
 		glfwSetMouseButtonCallback((GLFWwindow*)window->getHandle(), EventBase::mouseButtonCallbackDispatch);
-		glfwSetScrollCallback((GLFWwindow*)window->getHandle(), ImGui_ImplGlfw_ScrollCallback);
 
 		onPrepare();
 		renderer->prepare();
@@ -105,11 +104,6 @@ namespace Engine
 	void Application::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	{
 		ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-	}
-
-	void Application::scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
-	{
-		ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
 	}
 
 	std::vector<char> readFile(const std::string& filename)
