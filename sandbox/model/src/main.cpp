@@ -1,27 +1,42 @@
-#include "Base.hpp"
+#include "core/Core.hpp"
+
+#include "gfx/vulkan/Renderer.hpp"
+#include "gfx/vulkan/Resource.hpp"
+#include "gfx/vulkan/Device.hpp"
+#include "gfx/vulkan/Pipeline.hpp"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <imgui.h>
 
-class App : public Application
+using namespace Engine;
+
+class ModelRenderer : public Renderer
 {
 public:
 private:
-    VulkanBuffer vertexBuffer;
-    VulkanBuffer indexBuffer;
+    Buffer vertexBuffer;
+    Buffer indexBuffer;
     uint32_t indexCount;
 
     vk::DescriptorSetLayout uboLayout;
     vk::DescriptorSet uboSet;
-    VulkanBuffer uniformBuffer;
+    Buffer uniformBuffer;
 
-    VulkanTexture texture;
+    Texture texture;
     vk::DescriptorSetLayout textureLayout;
     vk::DescriptorSet textureSet;
 
     vk::PipelineLayout pipelineLayout;
     vk::Pipeline pipeline;
+
+    Texture depthTexture;
+    Texture msaaTexture;
 
 	float rotation = 0.0f;
     float minLod = 0.0f;
@@ -59,21 +74,33 @@ private:
         glm::mat4 proj;
     } ubo;
 
-	void onInit() override
-	{
-		appName = "Model";
-	}
-
     void onPrepare() override
     {
 		sampleValueIndex = std::floor(std::log2((double)msaaSamples));
         maxSampleValueIndex = sampleValueIndex;
+
+		depthTexture = device->createTexture();
+		depthTexture.sampleCount = msaaSamples;
+		depthTexture.allocate(swapchain->getExtent(), 1, vk::Format::eD32SfloatS8Uint, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
+		msaaTexture = device->createTexture();
+		msaaTexture.sampleCount = msaaSamples;
+		msaaTexture.allocate(swapchain->getExtent(), 1, swapchain->format, vk::ImageUsageFlagBits::eColorAttachment, vk::ImageAspectFlagBits::eColor);
+        msaaTexture.createSampler();
 
         prepareData();
         prepareTexture();
         prepareUBO();
         buildPipeline();
     }
+
+	void onResize() override
+	{
+		depthTexture.destroy();
+		depthTexture.allocate(swapchain->getExtent(), 1, vk::Format::eD32SfloatS8Uint, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
+		msaaTexture.destroy();
+		msaaTexture.allocate(swapchain->getExtent(), 1, swapchain->format, vk::ImageUsageFlagBits::eColorAttachment, vk::ImageAspectFlagBits::eColor);
+		msaaTexture.createSampler();
+	}
 
     void onUpdate() override
     {
@@ -88,10 +115,11 @@ private:
 
         std::memcpy(uniformBuffer.allocationInfo.pMappedData, &ubo, sizeof(UBO));
 
+		auto logicalDevice = device->getLogicalDevice();
         if (needRecreateSampler)
         {
-            device.waitIdle();
-			texture.vulkanDevice->device.destroySampler(texture.sampler);
+            logicalDevice.waitIdle();
+            logicalDevice.destroySampler(texture.sampler);
             texture.minLod = minLod;
 			texture.createSampler();
             vk::DescriptorImageInfo imageInfo{
@@ -108,22 +136,26 @@ private:
                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                 .pImageInfo = &imageInfo,
             };
-            device.updateDescriptorSets(descriptorWrite, {});
+            logicalDevice.updateDescriptorSets(descriptorWrite, {});
 			needRecreateSampler = false;
         }
 
         if (msaaResetFlag)
         {
-            device.waitIdle();
+            logicalDevice.waitIdle();
 
             swapchain->recreate();
-            depthStencilTexture.destroy();
-            allocateDepthStencilTexture();
+            depthTexture.destroy();
             msaaTexture.destroy();
-            allocateMsaaTexture();
 
-            device.destroyPipeline(pipeline);
-			device.destroyPipelineLayout(pipelineLayout);
+			depthTexture.sampleCount = msaaSamples;
+			depthTexture.allocate(swapchain->getExtent(), 1, vk::Format::eD32SfloatS8Uint, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
+			msaaTexture.sampleCount = msaaSamples;
+			msaaTexture.allocate(swapchain->getExtent(), 1, swapchain->format, vk::ImageUsageFlagBits::eColorAttachment, vk::ImageAspectFlagBits::eColor);
+            msaaTexture.createSampler();
+
+            logicalDevice.destroyPipeline(pipeline);
+            logicalDevice.destroyPipelineLayout(pipelineLayout);
 
             buildPipeline();
 			msaaResetFlag = false;
@@ -136,19 +168,22 @@ private:
         vertexBuffer.destroy();
 		indexBuffer.destroy();
 		texture.destroy();
+		depthTexture.destroy();
+		msaaTexture.destroy();
 
-		device.destroyDescriptorSetLayout(uboLayout);
-		device.destroyDescriptorSetLayout(textureLayout);
-		device.destroyPipeline(pipeline);
-		device.destroyPipelineLayout(pipelineLayout);
+		auto logicalDevice = device->getLogicalDevice();
+		logicalDevice.destroyDescriptorSetLayout(uboLayout);
+		logicalDevice.destroyDescriptorSetLayout(textureLayout);
+		logicalDevice.destroyPipeline(pipeline);
+		logicalDevice.destroyPipelineLayout(pipelineLayout);
     }
 
     void draw() override
     {
         auto &cmdBuffer = getCurrentDrawCmdBuffer();
 
-        vk::RenderingAttachmentInfo depthStencilAttachmentInfo{
-                .imageView = depthStencilTexture.imageView,
+        vk::RenderingAttachmentInfo depthAttachmentInfo{
+                .imageView = depthTexture.imageView,
                 .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
@@ -166,7 +201,7 @@ private:
                     .extent = swapchain->extent,
                 },
                 .layerCount = 1,
-                .pDepthAttachment = &depthStencilAttachmentInfo,
+                .pDepthAttachment = &depthAttachmentInfo,
         };
 
         vk::RenderingAttachmentInfo renderingAttachmentInfo{
@@ -209,16 +244,17 @@ private:
 
     void drawUi() override
     {
-		auto boxWidth = 200;
-		auto boxHeight = 180;
+        auto fontScale = device->getUiLayout()->fontScale;
+		auto boxWidth = fontScale * 12;
+		auto boxHeight = fontScale * 10;
 
 		ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight), ImGuiCond_Once);
         ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - 10, 10), ImGuiCond_Always);
 
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
-		ImGui::Begin("Model Rotation", nullptr, flags);
-		ImGui::Text("Degree");
+		ImGui::Begin("Control", nullptr, flags);
+		ImGui::Text("Model Rotate");
         ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2);
 		ImGui::SliderFloat("##", &rotation, 0.0f, 360.0f);
 
@@ -256,6 +292,8 @@ private:
 
     void prepareUBO()
     {
+		auto logicalDevice = device->getLogicalDevice();
+
         auto binding = vk::DescriptorSetLayoutBinding{
             .binding = 0,
             .descriptorType = vk::DescriptorType::eUniformBuffer,
@@ -263,19 +301,19 @@ private:
             .stageFlags = vk::ShaderStageFlagBits::eVertex,
         };
 
-        uboLayout = device.createDescriptorSetLayout({
+        uboLayout = logicalDevice.createDescriptorSetLayout({
             .bindingCount = 1,
             .pBindings = &binding,
         });
 
-        uboSet = device.allocateDescriptorSets({
-                                                   .descriptorPool = descriptorPool,
+        uboSet = logicalDevice.allocateDescriptorSets({
+                                                   .descriptorPool = device->getDescriptorPool(),
                                                    .descriptorSetCount = 1,
                                                    .pSetLayouts = &uboLayout,
                                                })
                      .front();
 
-        uniformBuffer = vulkanDevice->createBuffer();
+        uniformBuffer = device->createBuffer();
         uniformBuffer.allocate(sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, true);
 
         vk::DescriptorBufferInfo bufferInfo{
@@ -292,12 +330,14 @@ private:
             .descriptorType = vk::DescriptorType::eUniformBuffer,
             .pBufferInfo = &bufferInfo,
         };
-        device.updateDescriptorSets(descriptorWrite, {});
+        logicalDevice.updateDescriptorSets(descriptorWrite, {});
     }
 
     void prepareTexture()
     {
-        texture = vulkanDevice->createTexture();
+        auto logicalDevice = device->getLogicalDevice();
+
+        texture = device->createTexture();
         texture.loadFromFile("viking_room.png");
 
         auto binding = vk::DescriptorSetLayoutBinding{
@@ -307,13 +347,13 @@ private:
             .stageFlags = vk::ShaderStageFlagBits::eFragment,
         };
 
-        textureLayout = device.createDescriptorSetLayout({
+        textureLayout = logicalDevice.createDescriptorSetLayout({
             .bindingCount = 1,
             .pBindings = &binding,
         });
 
-        textureSet = device.allocateDescriptorSets({
-                                                       .descriptorPool = descriptorPool,
+        textureSet = logicalDevice.allocateDescriptorSets({
+                                                       .descriptorPool = device->getDescriptorPool(),
                                                        .descriptorSetCount = 1,
                                                        .pSetLayouts = &textureLayout,
                                                    })
@@ -333,7 +373,7 @@ private:
             .descriptorType = vk::DescriptorType::eCombinedImageSampler,
             .pImageInfo = &imageInfo,
         };
-        device.updateDescriptorSets(descriptorWrite, {});
+        logicalDevice.updateDescriptorSets(descriptorWrite, {});
     }
 
     void prepareData()
@@ -370,35 +410,35 @@ private:
         auto vbSize = sizeof(Vertex) * vertices.size();
         auto ibSize = sizeof(uint16_t) * indices.size();
 
-        vertexBuffer = vulkanDevice->createBuffer();
+        vertexBuffer = device->createBuffer();
         vertexBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
 
-        auto stagingBuffer = vulkanDevice->createBuffer();
+        auto stagingBuffer = device->createBuffer();
         stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc, true);
         std::memcpy(stagingBuffer.allocationInfo.pMappedData, vertices.data(), vbSize);
 
-        auto cmdBuffer = vulkanDevice->allocateCommandBuffer();
+        auto cmdBuffer = device->allocateCommandBuffer();
         cmdBuffer.copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer, {vk::BufferCopy{0, 0, vbSize}});
-        vulkanDevice->flushCommandBuffer(cmdBuffer);
+        device->flushCommandBuffer(cmdBuffer);
 
         stagingBuffer.destroy();
 
-        indexBuffer = vulkanDevice->createBuffer();
+        indexBuffer = device->createBuffer();
         indexBuffer.allocate(sizeof(uint16_t) * indices.size(), vk::BufferUsageFlagBits::eIndexBuffer);
         indexCount = static_cast<uint32_t>(indices.size());
 
-        void *data;
-        vmaMapMemory(allocator, indexBuffer.allocation, &data);
+        void* data = indexBuffer.map();
         std::memcpy(data, indices.data(), sizeof(uint16_t) * indices.size());
-        vmaUnmapMemory(allocator, indexBuffer.allocation);
+        indexBuffer.unmap();
     }
 
     void buildPipeline()
     {
-        VulkanPipelineBuilder pipelineBuilder(device);
+		auto logicalDevice = device->getLogicalDevice();
+        PipelineBuilder pipelineBuilder(logicalDevice);
 
-        auto vertShader = createShaderModule(device, "texture.vert.spv");
-        auto fragShader = createShaderModule(device, "texture.frag.spv");
+        auto vertShader = device->createShaderModule("texture.vert.spv");
+        auto fragShader = device->createShaderModule("texture.frag.spv");
 
         vk::PipelineShaderStageCreateInfo vertexShaderStageCI{
             .stage = vk::ShaderStageFlagBits::eVertex,
@@ -425,7 +465,7 @@ private:
 		pipelineBuilder.addColorAttachment(swapchain->format);
 
         vk::DescriptorSetLayout setLayouts[2] = {uboLayout, textureLayout};
-        pipelineLayout = device.createPipelineLayout({
+        pipelineLayout = logicalDevice.createPipelineLayout({
             .setLayoutCount = 2,
             .pSetLayouts = setLayouts,
         });
@@ -436,14 +476,24 @@ private:
 
         pipeline = pipelineBuilder.build();
 
-		device.destroyShaderModule(vertShader);
-		device.destroyShaderModule(fragShader);
+        logicalDevice.destroyShaderModule(vertShader);
+        logicalDevice.destroyShaderModule(fragShader);
+    }
+};
+
+class App : public Application
+{
+public:
+    void onInit() override
+    {
+        appName = "Model";
     }
 };
 
 int main()
 {
     auto app = std::make_unique<App>();
+	app->renderer = std::make_unique<ModelRenderer>();
     app->init();
     app->mainLoop();
     app->destroy();

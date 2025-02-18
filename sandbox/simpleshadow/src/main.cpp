@@ -1,7 +1,21 @@
-#include "Base.hpp"
+#include "core/Core.hpp"
+
+#include "gfx/vulkan/Renderer.hpp"
+#include "gfx/vulkan/Resource.hpp"
+#include "gfx/vulkan/Device.hpp"
+#include "gfx/vulkan/Pipeline.hpp"
+#include "gfx/vulkan/Utils.hpp"
+
 #include "Model.hpp"
 
-struct BufferIndex {
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <imgui_impl_vulkan.h>
+
+using namespace Engine;
+
+struct BufferIndex
+{
 	uint32_t startIndex;
 	uint32_t count;
 };
@@ -16,19 +30,23 @@ struct ModelInfo
 	glm::mat4 model;
 };
 
-struct SceneData {
+struct SceneData
+{
 	std::vector<ModelInfo> modelInfos;
 
-	VulkanBuffer vertexBuffer;
-	VulkanBuffer indexBuffer;
-	VulkanBuffer uniformBuffer;
+	Buffer vertexBuffer;
+	Buffer indexBuffer;
+	Buffer uniformBuffer;
 
 	vk::DescriptorSetLayout descriptorSetLayout;
 	vk::DescriptorSet descriptorSet;
 
-	ModelInfo& getModelInfoById(uint32_t id) {
-		for (auto& modelInfo : modelInfos) {
-			if (modelInfo.id == id) {
+	ModelInfo &getModelInfoById(uint32_t id)
+	{
+		for (auto &modelInfo : modelInfos)
+		{
+			if (modelInfo.id == id)
+			{
 				return modelInfo;
 			}
 		}
@@ -37,7 +55,8 @@ struct SceneData {
 	}
 };
 
-struct UBO {
+struct UBO
+{
 	glm::mat4 view;
 	glm::mat4 proj;
 
@@ -49,16 +68,19 @@ struct UBO {
 	float enablePCF;
 };
 
-struct PerObjectData {
+struct PerObjectData
+{
 	glm::mat4 model;
 };
 
-class App : public Application {
+class ShadowPassRenderer : public Renderer
+{
 public:
 private:
 	SceneData sceneData;
 
-	VulkanTexture shadowTexture;
+	Texture shadowTexture;
+	Texture depthTexture;
 
 	vk::PipelineLayout shadowPipelineLayout;
 	vk::Pipeline shadowPipeline;
@@ -69,7 +91,7 @@ private:
 	vk::DescriptorSetLayout shadowDescriptorSetLayout;
 	vk::DescriptorSet shadowDescriptorSet;
 
-	vk::Extent2D shadowMapExtent = { 4096, 4096 };
+	vk::Extent2D shadowMapExtent = {4096, 4096};
 
 	Model cube;
 	Model plane;
@@ -86,44 +108,53 @@ private:
 	float shadowBias = 0.000061035f;
 	bool enablePCF = true;
 
-	struct {
+	struct
+	{
 		glm::vec3 pos;
 		float radius = 20.0f;
 	} light;
 
-	void onInit() override { appName = "Simple Shadow"; }
-
-	void onDestroy() override {
+	void onDestroy() override
+	{
 		sceneData.uniformBuffer.destroy();
 		sceneData.vertexBuffer.destroy();
 		sceneData.indexBuffer.destroy();
 
 		shadowTexture.destroy();
+		depthTexture.destroy();
 
-		device.destroyDescriptorSetLayout(sceneData.descriptorSetLayout);
+		auto logicalDevice = device->getLogicalDevice();
+		logicalDevice.destroyDescriptorSetLayout(sceneData.descriptorSetLayout);
 
-		device.destroyPipelineLayout(shadowPipelineLayout);
-		device.destroyPipeline(shadowPipeline);
-		device.destroyPipelineLayout(finalImagePipelineLayout);
-		device.destroyPipeline(finalImagePipeline);
-
-		device.destroyDescriptorSetLayout(shadowDescriptorSetLayout);
+		logicalDevice.destroyPipelineLayout(shadowPipelineLayout);
+		logicalDevice.destroyPipeline(shadowPipeline);
+		logicalDevice.destroyPipelineLayout(finalImagePipelineLayout);
+		logicalDevice.destroyPipeline(finalImagePipeline);
+		logicalDevice.destroyDescriptorSetLayout(shadowDescriptorSetLayout);
 	}
 
-	void onPrepare() override {
+	void onResize() override
+	{
+		depthTexture.destroy();
+		depthTexture.allocate(swapchain->getExtent(), 1, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
+	}
+
+	void onPrepare() override
+	{
 		msaaSamples = vk::SampleCountFlagBits::e1;
 
-		shadowTexture = vulkanDevice->createTexture();
+		depthTexture = device->createTexture();
+		depthTexture.allocate(swapchain->getExtent(), 1, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
 
-		sceneData.vertexBuffer = vulkanDevice->createBuffer();
-		sceneData.indexBuffer = vulkanDevice->createBuffer();
-		sceneData.uniformBuffer = vulkanDevice->createBuffer();
+		sceneData.vertexBuffer = device->createBuffer();
+		sceneData.indexBuffer = device->createBuffer();
+		sceneData.uniformBuffer = device->createBuffer();
 
 		sceneData.vertexBuffer.allocate(100000,
-			vk::BufferUsageFlagBits::eVertexBuffer |
-			vk::BufferUsageFlagBits::eTransferDst);
+										vk::BufferUsageFlagBits::eVertexBuffer |
+											vk::BufferUsageFlagBits::eTransferDst);
 		sceneData.indexBuffer.allocate(1000000,
-			vk::BufferUsageFlagBits::eIndexBuffer);
+									   vk::BufferUsageFlagBits::eIndexBuffer);
 		sceneData.uniformBuffer.allocate(
 			sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, true);
 
@@ -134,16 +165,17 @@ private:
 			.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
 		};
 
-		sceneData.descriptorSetLayout = device.createDescriptorSetLayout(
-			{ .bindingCount = 1, .pBindings = &descriptorSetLayoutBinding });
+		auto logicalDevice = device->getLogicalDevice();
+		sceneData.descriptorSetLayout = logicalDevice.createDescriptorSetLayout(
+			{.bindingCount = 1, .pBindings = &descriptorSetLayoutBinding});
 
-		sceneData.descriptorSet =
-			device
-			.allocateDescriptorSets(
-				{ .descriptorPool = descriptorPool,
-				 .descriptorSetCount = 1,
-				 .pSetLayouts = &sceneData.descriptorSetLayout })
-			.front();
+		sceneData.descriptorSet = logicalDevice.allocateDescriptorSets(
+												   {.descriptorPool = device->getDescriptorPool(),
+													.descriptorSetCount = 1,
+													.pSetLayouts = &sceneData.descriptorSetLayout})
+									  .front();
+
+		shadowTexture = device->createTexture();
 
 		vk::DescriptorSetLayoutBinding shadowDescriptorSetLayoutBinding{
 			.binding = 0,
@@ -152,20 +184,20 @@ private:
 			.stageFlags = vk::ShaderStageFlagBits::eFragment,
 		};
 
-		shadowDescriptorSetLayout = device.createDescriptorSetLayout(
-			{ .bindingCount = 1, .pBindings = &shadowDescriptorSetLayoutBinding });
+		shadowDescriptorSetLayout = logicalDevice.createDescriptorSetLayout(
+			{.bindingCount = 1, .pBindings = &shadowDescriptorSetLayoutBinding});
 
 		shadowDescriptorSet =
-			device
-			.allocateDescriptorSets({ .descriptorPool = descriptorPool,
-									 .descriptorSetCount = 1,
-									 .pSetLayouts = &shadowDescriptorSetLayout })
-			.front();
+			logicalDevice
+				.allocateDescriptorSets({.descriptorPool = device->getDescriptorPool(),
+										 .descriptorSetCount = 1,
+										 .pSetLayouts = &shadowDescriptorSetLayout})
+				.front();
 
 		shadowTexture.allocate(shadowMapExtent, 1, vk::Format::eD32Sfloat,
-			vk::ImageUsageFlagBits::eDepthStencilAttachment |
-			vk::ImageUsageFlagBits::eSampled,
-			vk::ImageAspectFlagBits::eDepth);
+							   vk::ImageUsageFlagBits::eDepthStencilAttachment |
+								   vk::ImageUsageFlagBits::eSampled,
+							   vk::ImageAspectFlagBits::eDepth);
 		shadowTexture.addressMode = vk::SamplerAddressMode::eClampToBorder;
 		shadowTexture.createSampler();
 
@@ -184,7 +216,7 @@ private:
 			.pBufferInfo = &bufferInfo,
 		};
 
-		device.updateDescriptorSets(uboWrite, {});
+		logicalDevice.updateDescriptorSets(uboWrite, {});
 
 		vk::DescriptorImageInfo imageInfo{
 			.sampler = shadowTexture.sampler,
@@ -201,7 +233,7 @@ private:
 			.pImageInfo = &imageInfo,
 		};
 
-		device.updateDescriptorSets(shadowSetWrite, {});
+		logicalDevice.updateDescriptorSets(shadowSetWrite, {});
 
 		cube.id = 1;
 		cube.createCube();
@@ -213,8 +245,8 @@ private:
 		AddModel(cube);
 		AddModel(plane);
 
-		auto& cubeInfo = sceneData.getModelInfoById(cube.id);
-		auto& planeInfo = sceneData.getModelInfoById(plane.id);
+		auto &cubeInfo = sceneData.getModelInfoById(cube.id);
+		auto &planeInfo = sceneData.getModelInfoById(plane.id);
 
 		cubeInfo.model = glm::translate(glm::scale(cubeInfo.model, glm::vec3(0.5f, 0.5f, 0.5f)), glm::vec3(0.0f, 0.0f, 0.8f));
 		planeInfo.model = glm::scale(planeInfo.model, glm::vec3(100.0, 100.0, 0.0));
@@ -224,11 +256,12 @@ private:
 		shadowSetForImGui = ImGui_ImplVulkan_AddTexture(shadowTexture.sampler, shadowTexture.imageView, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 	}
 
-	void onUpdate() override {
+	void onUpdate() override
+	{
 		ubo.view = glm::lookAt(glm::vec3(distance), glm::vec3(0.0f, 0.0f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(45.0f), swapchain->getExtent().width / (float)swapchain->getExtent().height, 0.1f, 1000.0f);
 		ubo.proj[1][1] *= -1;
-			
+
 		ubo.lightView = glm::lookAt(light.pos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.lightProj = glm::ortho(-shadowBound, shadowBound, -shadowBound, shadowBound, 0.1f, 100.0f);
 		ubo.lightProj[1][1] *= -1;
@@ -245,8 +278,9 @@ private:
 		std::memcpy(sceneData.uniformBuffer.allocationInfo.pMappedData, &ubo, sizeof(UBO));
 	}
 
-	void draw() override {
-		auto& cmdBuffer = getCurrentDrawCmdBuffer();
+	void draw() override
+	{
+		auto &cmdBuffer = getCurrentDrawCmdBuffer();
 
 		imageLayoutTransition(
 			cmdBuffer, vk::ImageAspectFlagBits::eDepth, vk::PipelineStageFlagBits::eTopOfPipe,
@@ -281,15 +315,15 @@ private:
 		cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowPipeline);
 		cmdBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics, shadowPipelineLayout, 0,
-			{ sceneData.descriptorSet }, {});
-		cmdBuffer.bindVertexBuffers(0, { sceneData.vertexBuffer.buffer }, { 0 });
+			{sceneData.descriptorSet}, {});
+		cmdBuffer.bindVertexBuffers(0, {sceneData.vertexBuffer.buffer}, {0});
 		cmdBuffer.bindIndexBuffer(sceneData.indexBuffer.buffer, 0,
-			vk::IndexType::eUint16);
+								  vk::IndexType::eUint16);
 
 		cmdBuffer.setViewport(0, getDefaultViewport(shadowMapExtent));
 		cmdBuffer.setScissor(0, getDefaultScissor(shadowMapExtent));
 
-		for (auto& model : sceneData.modelInfos)
+		for (auto &model : sceneData.modelInfos)
 		{
 			if (model.id == plane.id)
 			{
@@ -318,7 +352,7 @@ private:
 		};
 
 		vk::RenderingAttachmentInfo depthAttachmentInfo{
-			.imageView = depthStencilTexture.imageView,
+			.imageView = depthTexture.imageView,
 			.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
 			.loadOp = vk::AttachmentLoadOp::eClear,
 			.storeOp = vk::AttachmentStoreOp::eStore,
@@ -345,13 +379,13 @@ private:
 		cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, finalImagePipeline);
 		cmdBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics, finalImagePipelineLayout, 1,
-			{ shadowDescriptorSet }, {});
+			{shadowDescriptorSet}, {});
 
 		auto extent = swapchain->getExtent();
 		cmdBuffer.setViewport(0, getDefaultViewport(extent));
 		cmdBuffer.setScissor(0, getDefaultScissor(extent));
 
-		for (auto& model : sceneData.modelInfos)
+		for (auto &model : sceneData.modelInfos)
 		{
 			perObjectData.model = model.model;
 			cmdBuffer.pushConstants(finalImagePipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PerObjectData), &perObjectData);
@@ -363,11 +397,12 @@ private:
 
 	void drawUi() override
 	{
-		auto boxWidth = 200;
-		auto boxHeight = 270;
+		auto fontScale = device->getUiLayout()->fontScale;
+		auto boxWidth = fontScale * 12;
+		auto boxHeight = fontScale * 17;
 
 		ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight), ImGuiCond_Once);
-		ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - 10, 10), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - fontScale, fontScale), ImGuiCond_Always);
 
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
@@ -379,7 +414,7 @@ private:
 
 		ImGui::Text("# divide for bias");
 		ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2);
-		
+
 		const int maxDivide = 40;
 		static int numDivide = 14;
 		if (ImGui::SliderInt("##bias", &numDivide, 0, maxDivide))
@@ -406,23 +441,25 @@ private:
 		ImGui::Checkbox("Enable PCF", &enablePCF);
 		ImGui::End();
 
-		float texturePrintSize = 200.0f;
-		ImGui::SetNextWindowPos(ImVec2(100, 10), ImGuiCond_FirstUseEver);
+		float texturePrintSize = 240.0f;
+		ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - texturePrintSize - fontScale * 3, fontScale), ImGuiCond_Always);
 		ImGui::Begin("Shadow Map", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Image((ImTextureID)shadowSetForImGui, ImVec2(texturePrintSize, texturePrintSize));
 		ImGui::End();
 	}
 
-	void buildPipeline() {
+	void buildPipeline()
+	{
 		auto pushConstantRange = vk::PushConstantRange{
 			.stageFlags = vk::ShaderStageFlagBits::eVertex,
 			.offset = 0,
 			.size = sizeof(PerObjectData),
 		};
 
-		VulkanPipelineBuilder shadowPassBuilder(device);
+		auto logicalDevice = device->getLogicalDevice();
+		PipelineBuilder shadowPassBuilder(logicalDevice);
 
-		auto shadowVertShader = createShaderModule(device, "shadow_gen.vert.spv");
+		auto shadowVertShader = device->createShaderModule("shadow_gen.vert.spv");
 
 		auto vertexAttribute = Vertex::getAttributeDescriptions();
 		auto vertexDescription = Vertex::getBindingDescription();
@@ -440,22 +477,22 @@ private:
 			.stage = vk::ShaderStageFlagBits::eVertex,
 			.module = shadowVertShader,
 			.pName = "vert",
-			});
+		});
 
-		shadowPipelineLayout = device.createPipelineLayout({
+		shadowPipelineLayout = logicalDevice.createPipelineLayout({
 			.setLayoutCount = 1,
 			.pSetLayouts = &sceneData.descriptorSetLayout,
 			.pushConstantRangeCount = 1,
 			.pPushConstantRanges = &pushConstantRange,
-			});
+		});
 
 		shadowPassBuilder.setLayout(shadowPipelineLayout);
 		shadowPipeline = shadowPassBuilder.build();
-		device.destroyShaderModule(shadowVertShader);
+		logicalDevice.destroyShaderModule(shadowVertShader);
 
-		VulkanPipelineBuilder finalImageBuilder(device);
-		auto finalImageVertShader = createShaderModule(device, "shadow.vert.spv");
-		auto finalImageFragShader = createShaderModule(device, "shadow.frag.spv");
+		PipelineBuilder finalImageBuilder(logicalDevice);
+		auto finalImageVertShader = device->createShaderModule("shadow.vert.spv");
+		auto finalImageFragShader = device->createShaderModule("shadow.frag.spv");
 
 		finalImageBuilder.vertexInputCI.vertexAttributeDescriptionCount =
 			static_cast<uint32_t>(vertexAttribute.size());
@@ -469,50 +506,53 @@ private:
 			.stage = vk::ShaderStageFlagBits::eVertex,
 			.module = finalImageVertShader,
 			.pName = "vert",
-			});
+		});
 
 		finalImageBuilder.shaderStages.push_back({
 			.stage = vk::ShaderStageFlagBits::eFragment,
 			.module = finalImageFragShader,
 			.pName = "frag",
-			});
+		});
 
 		finalImageBuilder.addColorAttachment(swapchain->format);
+		finalImageBuilder.depthAttachmentFormat = vk::Format::eD32Sfloat;
 
-		vk::DescriptorSetLayout descriptorSetLayouts[2] = { sceneData.descriptorSetLayout, shadowDescriptorSetLayout };
-		finalImagePipelineLayout = device.createPipelineLayout({
+		vk::DescriptorSetLayout descriptorSetLayouts[2] = {sceneData.descriptorSetLayout, shadowDescriptorSetLayout};
+		finalImagePipelineLayout = logicalDevice.createPipelineLayout({
 			.setLayoutCount = 2,
 			.pSetLayouts = descriptorSetLayouts,
 			.pushConstantRangeCount = 1,
 			.pPushConstantRanges = &pushConstantRange,
-			});
+		});
 
 		finalImageBuilder.setLayout(finalImagePipelineLayout);
 		finalImagePipeline = finalImageBuilder.build();
 
-		device.destroyShaderModule(finalImageVertShader);
-		device.destroyShaderModule(finalImageFragShader);
+		logicalDevice.destroyShaderModule(finalImageVertShader);
+		logicalDevice.destroyShaderModule(finalImageFragShader);
 	}
 
-	void AddModel(Model& model) {
+	void AddModel(Model &model)
+	{
 		uint32_t vbSize = model.getTotalVerticesSize();
 		uint32_t ibSize = model.getTotalIndicesSize();
 
-		auto stagingBuffer = vulkanDevice->createBuffer();
+		auto stagingBuffer = device->createBuffer();
 		stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc, true);
 		std::memcpy(stagingBuffer.allocationInfo.pMappedData,
-			model.mesh.vertices.data(), vbSize);
+					model.mesh.vertices.data(), vbSize);
 
-		auto cmdBuffer = vulkanDevice->allocateCommandBuffer();
+		auto cmdBuffer = device->allocateCommandBuffer();
 		uint32_t vDstOffset = 0;
 
-		if (!sceneData.modelInfos.empty()) {
-			auto& vTail = sceneData.modelInfos.back().vertex;
+		if (!sceneData.modelInfos.empty())
+		{
+			auto &vTail = sceneData.modelInfos.back().vertex;
 			vDstOffset = vTail.startIndex + vTail.count;
 		}
 		cmdBuffer.copyBuffer(stagingBuffer.buffer, sceneData.vertexBuffer.buffer,
-			vk::BufferCopy{ 0, vDstOffset * sizeof(Vertex), vbSize });
-		vulkanDevice->flushCommandBuffer(cmdBuffer);
+							 vk::BufferCopy{0, vDstOffset * sizeof(Vertex), vbSize});
+		device->flushCommandBuffer(cmdBuffer);
 
 		ModelInfo modelInfo{
 			.id = model.id,
@@ -524,17 +564,17 @@ private:
 
 		stagingBuffer.destroy();
 
-		auto& indexBuffer = sceneData.indexBuffer;
+		auto &indexBuffer = sceneData.indexBuffer;
 
 		uint32_t iDstOffset = 0;
-		if (!sceneData.modelInfos.empty()) {
-			auto& iTail = sceneData.modelInfos.back().index;
+		if (!sceneData.modelInfos.empty())
+		{
+			auto &iTail = sceneData.modelInfos.back().index;
 			iDstOffset = iTail.startIndex + iTail.count;
 		}
-		void* data;
-		vmaMapMemory(allocator, indexBuffer.allocation, &data);
-		std::memcpy(static_cast<uint8_t*>(data) + iDstOffset * sizeof(uint16_t), model.mesh.indices.data(), ibSize);
-		vmaUnmapMemory(allocator, indexBuffer.allocation);
+		void* data = indexBuffer.map();
+		std::memcpy(static_cast<uint8_t *>(data) + iDstOffset * sizeof(uint16_t), model.mesh.indices.data(), ibSize);
+		indexBuffer.unmap();
 
 		modelInfo.index.count = static_cast<uint32_t>(model.mesh.indices.size());
 		modelInfo.index.startIndex = iDstOffset;
@@ -543,8 +583,19 @@ private:
 	}
 };
 
-int main() {
+class App : public Application
+{
+public:
+	void onInit() override
+	{
+		appName = "Simple Shadow";
+	}
+};
+
+int main()
+{
 	auto app = std::make_unique<App>();
+	app->renderer = std::make_unique<ShadowPassRenderer>();
 	app->init();
 	app->mainLoop();
 	app->destroy();
