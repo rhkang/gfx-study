@@ -93,8 +93,8 @@ class SimpleRenderer : public Renderer {
         auto logicalDevice = device->getLogicalDevice();
         PipelineBuilder pipelineBuilder(logicalDevice);
 
-        auto vertShader = device->createShaderModule("triangle.vert.spv");
-        auto fragShader = device->createShaderModule("triangle.frag.spv");
+        auto vertShader = device->createShaderModule("test/triangle.vert.spv");
+        auto fragShader = device->createShaderModule("test/triangle.frag.spv");
 
         vk::PipelineShaderStageCreateInfo vertexShaderStageCI{
             .stage = vk::ShaderStageFlagBits::eVertex,

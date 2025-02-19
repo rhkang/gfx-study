@@ -479,8 +479,8 @@ class ModelRenderer : public Renderer {
         auto logicalDevice = device->getLogicalDevice();
         PipelineBuilder pipelineBuilder(logicalDevice);
 
-        auto vertShader = device->createShaderModule("texture.vert.spv");
-        auto fragShader = device->createShaderModule("texture.frag.spv");
+        auto vertShader = device->createShaderModule("test/texture.vert.spv");
+        auto fragShader = device->createShaderModule("test/texture.frag.spv");
 
         vk::PipelineShaderStageCreateInfo vertexShaderStageCI{
             .stage = vk::ShaderStageFlagBits::eVertex,

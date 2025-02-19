@@ -488,7 +488,7 @@ class ShadowPassRenderer : public Renderer {
         PipelineBuilder shadowPassBuilder(logicalDevice);
 
         auto shadowVertShader =
-            device->createShaderModule("shadow_gen.vert.spv");
+            device->createShaderModule("test/shadow_gen.vert.spv");
 
         auto vertexAttribute = Vertex::getAttributeDescriptions();
         auto vertexDescription = Vertex::getBindingDescription();
@@ -521,9 +521,9 @@ class ShadowPassRenderer : public Renderer {
 
         PipelineBuilder finalImageBuilder(logicalDevice);
         auto finalImageVertShader =
-            device->createShaderModule("shadow.vert.spv");
+            device->createShaderModule("test/shadow.vert.spv");
         auto finalImageFragShader =
-            device->createShaderModule("shadow.frag.spv");
+            device->createShaderModule("test/shadow.frag.spv");
 
         finalImageBuilder.vertexInputCI.vertexAttributeDescriptionCount =
             static_cast<uint32_t>(vertexAttribute.size());

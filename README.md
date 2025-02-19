@@ -15,6 +15,11 @@ Required Features
 - dynamicRendering
 - sampleRateShading
 
+### Shader Compile
+```
+> scripts/hlsl_compile.sh
+```
+
 ### Build Project
 ```
 cmake -S . -B build
@@ -25,12 +30,5 @@ cmake --build build
 // release
 cmake --build build --config Release
 ```
-
-### Shader Compile
-```
-> scripts/hlsl_compile.bat
-```
-
-Currently work on Windows only (hlsl -> SPIR-V)
 
 ## Troubleshooting
