@@ -17,8 +17,10 @@ void Device::init(void* window) {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions =
         glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    instanceExtensions.insert(instanceExtensions.end(), glfwExtensions,
-                              glfwExtensions + glfwExtensionCount);
+    instanceExtensions.insert(
+        instanceExtensions.end(), glfwExtensions,
+        glfwExtensions + glfwExtensionCount
+    );
 
     vk::InstanceCreateInfo ici{
         .pApplicationInfo = &appInfo,
@@ -49,10 +51,13 @@ void Device::init(void* window) {
     auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
     auto queueFamilyIndex = static_cast<uint32_t>(std::distance(
         queueFamilyProperties.begin(),
-        std::find_if(queueFamilyProperties.begin(), queueFamilyProperties.end(),
-                     [](const vk::QueueFamilyProperties& qfp) {
-                         return qfp.queueFlags & vk::QueueFlagBits::eGraphics;
-                     })));
+        std::find_if(
+            queueFamilyProperties.begin(), queueFamilyProperties.end(),
+            [](const vk::QueueFamilyProperties& qfp) {
+                return qfp.queueFlags & vk::QueueFlagBits::eGraphics;
+            }
+        )
+    ));
 
     float queuePriority = 1.0f;
     vk::DeviceQueueCreateInfo dqci{

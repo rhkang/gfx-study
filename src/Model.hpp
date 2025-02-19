@@ -14,19 +14,24 @@ struct Vertex {
     getAttributeDescriptions() {
         return {
             vk::VertexInputAttributeDescription(
-                0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
+                0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)
+            ),
             vk::VertexInputAttributeDescription(
-                1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal)),
-            vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat,
-                                                offsetof(Vertex, uv)),
+                1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal)
+            ),
             vk::VertexInputAttributeDescription(
-                3, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, color)),
+                2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, uv)
+            ),
+            vk::VertexInputAttributeDescription(
+                3, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, color)
+            ),
         };
     }
 
     static vk::VertexInputBindingDescription getBindingDescription() {
-        return vk::VertexInputBindingDescription(0, sizeof(Vertex),
-                                                 vk::VertexInputRate::eVertex);
+        return vk::VertexInputBindingDescription(
+            0, sizeof(Vertex), vk::VertexInputRate::eVertex
+        );
     }
 };
 

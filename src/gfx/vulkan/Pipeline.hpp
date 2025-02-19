@@ -34,8 +34,8 @@ class PipelineBuilder {
 
     void addColorAttachment(vk::Format format);
     void addColorAttachment(
-        vk::Format format,
-        vk::PipelineColorBlendAttachmentState colorBlendState);
+        vk::Format format, vk::PipelineColorBlendAttachmentState colorBlendState
+    );
 
    private:
     vk::Device device;

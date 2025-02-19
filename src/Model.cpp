@@ -13,16 +13,21 @@ void Model::loadFromFile(std::string fileName) {
         aiMesh *mesh = scene->mMeshes[i];
         for (unsigned int j = 0; j < mesh->mNumVertices; j++) {
             Vertex vertex;
-            vertex.pos = glm::vec3(mesh->mVertices[j].x, mesh->mVertices[j].y,
-                                   mesh->mVertices[j].z);
+            vertex.pos = glm::vec3(
+                mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z
+            );
             vertex.uv = mesh->mTextureCoords[0]
-                            ? glm::vec2(mesh->mTextureCoords[0][j].x,
-                                        mesh->mTextureCoords[0][j].y)
+                            ? glm::vec2(
+                                  mesh->mTextureCoords[0][j].x,
+                                  mesh->mTextureCoords[0][j].y
+                              )
                             : glm::vec2(0.0f, 0.0f);
             vertex.color =
                 mesh->mColors[0]
-                    ? glm::vec4(mesh->mColors[0][j].r, mesh->mColors[0][j].g,
-                                mesh->mColors[0][j].b, mesh->mColors[0][j].a)
+                    ? glm::vec4(
+                          mesh->mColors[0][j].r, mesh->mColors[0][j].g,
+                          mesh->mColors[0][j].b, mesh->mColors[0][j].a
+                      )
                     : glm::vec4(1.0f);
             vertex.uv.y =
                 1.0f - vertex.uv.y;  // obj format assume coord 0 is the bottom

@@ -24,19 +24,23 @@ class SimpleRenderer : public Renderer {
 
         static vk::VertexInputBindingDescription getBindingDescription() {
             return vk::VertexInputBindingDescription(
-                0, sizeof(Vertex), vk::VertexInputRate::eVertex);
+                0, sizeof(Vertex), vk::VertexInputRate::eVertex
+            );
         }
 
         static std::array<vk::VertexInputAttributeDescription, 3>
         getAttributeDescriptions() {
             return {
                 vk::VertexInputAttributeDescription(
-                    0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
+                    0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)
+                ),
                 vk::VertexInputAttributeDescription(
-                    1, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, uv)),
+                    1, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, uv)
+                ),
                 vk::VertexInputAttributeDescription(
                     2, 0, vk::Format::eR32G32B32A32Sfloat,
-                    offsetof(Vertex, color)),
+                    offsetof(Vertex, color)
+                ),
             };
         }
     };
@@ -60,9 +64,10 @@ class SimpleRenderer : public Renderer {
 
         auto vbSize = sizeof(Vertex) * vertices.size();
         vertexBuffer = device->createBuffer();
-        vertexBuffer.allocate(vbSize,
-                              vk::BufferUsageFlagBits::eVertexBuffer |
-                                  vk::BufferUsageFlagBits::eTransferDst);
+        vertexBuffer.allocate(
+            vbSize, vk::BufferUsageFlagBits::eVertexBuffer |
+                        vk::BufferUsageFlagBits::eTransferDst
+        );
 
         auto stagingBuffer = device->createBuffer();
         stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc);
@@ -73,15 +78,19 @@ class SimpleRenderer : public Renderer {
         vmaUnmapMemory(device->getAllocator(), stagingBuffer.allocation);
 
         auto cmdBuffer = device->allocateCommandBuffer();
-        cmdBuffer.copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer,
-                             {vk::BufferCopy{0, 0, vbSize}});
+        cmdBuffer.copyBuffer(
+            stagingBuffer.buffer, vertexBuffer.buffer,
+            {vk::BufferCopy{0, 0, vbSize}}
+        );
         device->flushCommandBuffer(cmdBuffer);
 
         stagingBuffer.destroy();
 
         indexBuffer = device->createBuffer();
-        indexBuffer.allocate(sizeof(uint16_t) * indices.size(),
-                             vk::BufferUsageFlagBits::eIndexBuffer);
+        indexBuffer.allocate(
+            sizeof(uint16_t) * indices.size(),
+            vk::BufferUsageFlagBits::eIndexBuffer
+        );
         indexCount = static_cast<uint32_t>(indices.size());
 
         vmaMapMemory(device->getAllocator(), indexBuffer.allocation, &data);
@@ -149,8 +158,8 @@ class SimpleRenderer : public Renderer {
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue = vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f,
-                                                                   0.0f, 1.0f}},
+            .clearValue = vk::ClearColorValue{std::array<float, 4>{
+                0.0f, 0.0f, 0.0f, 1.0f}},
         };
 
         vk::RenderingInfo renderingInfo{
@@ -167,8 +176,9 @@ class SimpleRenderer : public Renderer {
         cmdBuffer.beginRendering(renderingInfo);
         cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
         cmdBuffer.bindVertexBuffers(0, {vertexBuffer.buffer}, {0});
-        cmdBuffer.bindIndexBuffer(indexBuffer.buffer, 0,
-                                  vk::IndexType::eUint16);
+        cmdBuffer.bindIndexBuffer(
+            indexBuffer.buffer, 0, vk::IndexType::eUint16
+        );
 
         auto extent = swapchain->getExtent();
         cmdBuffer.setViewport(0, getDefaultViewport(extent));

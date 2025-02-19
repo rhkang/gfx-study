@@ -45,7 +45,8 @@ void UiLayout::initImGui() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     io.Fonts->AddFontFromFileTTF(
-        (std::string(RESOURCE_DIR) + "/fonts/" + fontName).c_str(), fontScale);
+        (std::string(RESOURCE_DIR) + "/fonts/" + fontName).c_str(), fontScale
+    );
 
     vk::PipelineRenderingCreateInfo prci{
         .colorAttachmentCount = 1,
@@ -102,13 +103,16 @@ void UiLayout::showMetrics() {
 
     int boxWidth = fontScale * 15;
     int boxHeight = fontScale * 25;
-    ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight),
-                             ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(fontScale, fontScale),
-                            ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(
+        ImVec2(boxWidth, boxHeight), ImGuiCond_FirstUseEver
+    );
+    ImGui::SetNextWindowPos(
+        ImVec2(fontScale, fontScale), ImGuiCond_FirstUseEver
+    );
 
-    ImGui::SetNextWindowSizeConstraints(ImVec2(boxWidth, boxHeight),
-                                        ImVec2(boxWidth, fontScale * 1000));
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(boxWidth, boxHeight), ImVec2(boxWidth, fontScale * 1000)
+    );
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoFocusOnAppearing |
@@ -150,35 +154,46 @@ void UiLayout::showMetrics() {
         static int frameTimePlotMax = 70;
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
         ImGui::Text("FPS History");
-        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
-                                ImGui::GetStyle().WindowPadding.x * 2);
-        ImGui::PlotLines("##FPS History", fpsHistory, IM_ARRAYSIZE(fpsHistory),
-                         fpsIndex, nullptr, 0.0f, frameTimePlotMax,
-                         ImVec2(0, 50));
-        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
-                                ImGui::GetStyle().WindowPadding.x * 2);
+        ImGui::SetNextItemWidth(
+            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
+        );
+        ImGui::PlotLines(
+            "##FPS History", fpsHistory, IM_ARRAYSIZE(fpsHistory), fpsIndex,
+            nullptr, 0.0f, frameTimePlotMax, ImVec2(0, 50)
+        );
+        ImGui::SetNextItemWidth(
+            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
+        );
         ImGui::SliderInt("##Fps Plot Scale", &frameTimePlotMax, 1, 120);
 
         static float renderTimePlotMax = 5.0f;
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
         ImGui::Text("Render Time History");
-        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
-                                ImGui::GetStyle().WindowPadding.x * 2);
-        ImGui::PlotLines("##Render Time History", renderTimeHistory,
-                         IM_ARRAYSIZE(renderTimeHistory), renderTimeIndex,
-                         nullptr, 0.0f, renderTimePlotMax, ImVec2(0, 50));
-        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
-                                ImGui::GetStyle().WindowPadding.x * 2);
-        ImGui::SliderFloat("##Render Time Plot Scale", &renderTimePlotMax,
-                           0.001f, 17.0f);
+        ImGui::SetNextItemWidth(
+            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
+        );
+        ImGui::PlotLines(
+            "##Render Time History", renderTimeHistory,
+            IM_ARRAYSIZE(renderTimeHistory), renderTimeIndex, nullptr, 0.0f,
+            renderTimePlotMax, ImVec2(0, 50)
+        );
+        ImGui::SetNextItemWidth(
+            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
+        );
+        ImGui::SliderFloat(
+            "##Render Time Plot Scale", &renderTimePlotMax, 0.001f, 17.0f
+        );
 
         ImGui::Checkbox("Show Extra Debug", &showExtraDebug);
         if (showExtraDebug) {
-            ImGui::Text("Mouse Position: (%.1f, %.1f)",
-                        ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
-            ImGui::Text("Window Size: (%.0f, %.0f)",
-                        ImGui::GetIO().DisplaySize.x,
-                        ImGui::GetIO().DisplaySize.y);
+            ImGui::Text(
+                "Mouse Position: (%.1f, %.1f)", ImGui::GetIO().MousePos.x,
+                ImGui::GetIO().MousePos.y
+            );
+            ImGui::Text(
+                "Window Size: (%.0f, %.0f)", ImGui::GetIO().DisplaySize.x,
+                ImGui::GetIO().DisplaySize.y
+            );
             ImGui::Text("Delta Time: %.6f", deltaTime);
         }
     }

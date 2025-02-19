@@ -102,8 +102,9 @@ void Renderer::render() {
 
 void Renderer::prepareFrame() {
     auto logicalDevice = device->getLogicalDevice();
-    auto result = logicalDevice.waitForFences(fences.inFlight[currentFrame],
-                                              vk::True, UINT64_MAX);
+    auto result = logicalDevice.waitForFences(
+        fences.inFlight[currentFrame], vk::True, UINT64_MAX
+    );
     assert(result == vk::Result::eSuccess);
 
     imageIndex =
@@ -122,8 +123,9 @@ void Renderer::drawFrame() {
     cmdBuffer.reset();
     cmdBuffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
     cmdBuffer.resetQueryPool(queryPool, 0, 2);
-    cmdBuffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, queryPool,
-                             0);
+    cmdBuffer.writeTimestamp(
+        vk::PipelineStageFlagBits::eTopOfPipe, queryPool, 0
+    );
 
     imageLayoutTransition(
         cmdBuffer, vk::ImageAspectFlagBits::eColor,
@@ -131,7 +133,8 @@ void Renderer::drawFrame() {
         vk::PipelineStageFlagBits::eColorAttachmentOutput,
         vk::AccessFlagBits::eNone, vk::AccessFlagBits::eColorAttachmentWrite,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal,
-        swapchain->getImage(imageIndex));
+        swapchain->getImage(imageIndex)
+    );
 
     draw();
 
@@ -164,10 +167,12 @@ void Renderer::drawFrame() {
         vk::PipelineStageFlagBits::eBottomOfPipe,
         vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eNone,
         vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::ePresentSrcKHR, swapchain->getImage(imageIndex));
+        vk::ImageLayout::ePresentSrcKHR, swapchain->getImage(imageIndex)
+    );
 
-    cmdBuffer.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,
-                             queryPool, 1);
+    cmdBuffer.writeTimestamp(
+        vk::PipelineStageFlagBits::eBottomOfPipe, queryPool, 1
+    );
     cmdBuffer.end();
 }
 
@@ -181,16 +186,18 @@ void Renderer::submitFrame() {
     vk::Semaphore signalSemaphores[] = {
         semaphores.renderFinished[currentFrame]};
 
-    queue.submit({vk::SubmitInfo{
-                     .waitSemaphoreCount = 1,
-                     .pWaitSemaphores = waitSemaphores,
-                     .pWaitDstStageMask = waitStages,
-                     .commandBufferCount = 1,
-                     .pCommandBuffers = &drawCmdBuffers[currentFrame],
-                     .signalSemaphoreCount = 1,
-                     .pSignalSemaphores = signalSemaphores,
-                 }},
-                 fences.inFlight[currentFrame]);
+    queue.submit(
+        {vk::SubmitInfo{
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = waitSemaphores,
+            .pWaitDstStageMask = waitStages,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &drawCmdBuffers[currentFrame],
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = signalSemaphores,
+        }},
+        fences.inFlight[currentFrame]
+    );
 
     vk::SwapchainKHR swapchains[] = {swapchain->getSwapchain()};
     VkPresentInfoKHR presentInfo{
@@ -210,7 +217,8 @@ void Renderer::submitFrame() {
 
     vk::Result queryResult = logicalDevice.getQueryPoolResults(
         queryPool, 0, 2, sizeof(uint64_t) * 2, &timestamps, sizeof(uint64_t),
-        vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+        vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait
+    );
     if (queryResult == vk::Result::eSuccess) {
         uint64_t startTimestamp = timestamps[0];
         uint64_t endTimestamp = timestamps[1];
@@ -225,7 +233,8 @@ void Renderer::submitFrame() {
 void Renderer::handleWindowResize() {
     vk::SurfaceCapabilitiesKHR surfaceCapabilities =
         device->getPhysicalDevice().getSurfaceCapabilitiesKHR(
-            device->getSurface());
+            device->getSurface()
+        );
     vk::Extent2D extent = surfaceCapabilities.currentExtent;
     if (extent.width == 0 && extent.height == 0) {
         return;

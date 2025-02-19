@@ -85,7 +85,8 @@ void PipelineBuilder::addColorAttachment(vk::Format format) {
 }
 
 void PipelineBuilder::addColorAttachment(
-    vk::Format format, vk::PipelineColorBlendAttachmentState colorBlendState) {
+    vk::Format format, vk::PipelineColorBlendAttachmentState colorBlendState
+) {
     colorAttachmentFormats.push_back(format);
     colorBlendAttachmentStates.push_back(colorBlendState);
 }
