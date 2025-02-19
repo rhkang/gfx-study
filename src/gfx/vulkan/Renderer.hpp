@@ -4,71 +4,66 @@
 #include "gfx/vulkan/UiLayout.hpp"
 #include "gfx/vulkan/Swapchain.hpp"
 
-namespace Engine
-{
-    class Renderer
-    {
-    public:
-        void init(Device *device);
-		void prepare();
-        void update();
-        void destroy();
-        void render();
+namespace Engine {
+class Renderer {
+   public:
+    void init(Device *device);
+    void prepare();
+    void update();
+    void destroy();
+    void render();
 
-        void handleWindowResize();
-        bool windowResized = false;
-    protected:
-        inline vk::CommandBuffer& getCurrentDrawCmdBuffer()
-        {
-            return drawCmdBuffers[currentFrame];
-        }
-        inline vk::Viewport getDefaultViewport(vk::Extent2D extent)
-        {
-            return vk::Viewport(0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f);
-        }
-        inline vk::Rect2D getDefaultScissor(vk::Extent2D extent)
-        {
-            return vk::Rect2D(vk::Offset2D(0, 0), extent);
-        }
+    void handleWindowResize();
+    bool windowResized = false;
 
-        virtual void onInit() {}
-        virtual void onPrepare() {}
-        virtual void onUpdate() {}
-        virtual void onDestroy() {}
-        virtual void onResize() {}
+   protected:
+    inline vk::CommandBuffer &getCurrentDrawCmdBuffer() {
+        return drawCmdBuffers[currentFrame];
+    }
+    inline vk::Viewport getDefaultViewport(vk::Extent2D extent) {
+        return vk::Viewport(0.0f, 0.0f, static_cast<float>(extent.width),
+                            static_cast<float>(extent.height), 0.0f, 1.0f);
+    }
+    inline vk::Rect2D getDefaultScissor(vk::Extent2D extent) {
+        return vk::Rect2D(vk::Offset2D(0, 0), extent);
+    }
 
-        virtual void draw() = 0;
-        virtual void drawUi() {}
+    virtual void onInit() {}
+    virtual void onPrepare() {}
+    virtual void onUpdate() {}
+    virtual void onDestroy() {}
+    virtual void onResize() {}
 
-		void prepareFrame();
-		void drawFrame();
-		void submitFrame();
+    virtual void draw() = 0;
+    virtual void drawUi() {}
 
-        Device *device;
+    void prepareFrame();
+    void drawFrame();
+    void submitFrame();
 
-        vk::QueryPool queryPool;
-        uint64_t timestamps[2];
-        uint64_t timestampPeriod;
+    Device *device;
 
-        uint32_t imageIndex;
-        vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
+    vk::QueryPool queryPool;
+    uint64_t timestamps[2];
+    uint64_t timestampPeriod;
 
-        std::vector<vk::CommandBuffer> drawCmdBuffers;
-        std::unique_ptr<Swapchain> swapchain;
+    uint32_t imageIndex;
+    vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 
-        uint32_t currentFrame = 0;
+    std::vector<vk::CommandBuffer> drawCmdBuffers;
+    std::unique_ptr<Swapchain> swapchain;
 
-        struct
-        {
-            std::vector<vk::Semaphore> imageAvailable;
-            std::vector<vk::Semaphore> renderFinished;
-        } semaphores;
+    uint32_t currentFrame = 0;
 
-        struct
-        {
-            std::vector<vk::Fence> inFlight;
-        } fences;
+    struct {
+        std::vector<vk::Semaphore> imageAvailable;
+        std::vector<vk::Semaphore> renderFinished;
+    } semaphores;
 
-    private:
-    };
-}
+    struct {
+        std::vector<vk::Fence> inFlight;
+    } fences;
+
+   private:
+};
+}  // namespace Engine

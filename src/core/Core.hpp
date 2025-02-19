@@ -10,46 +10,35 @@
 
 #include "core/Window.hpp"
 
-namespace Engine
-{
-	class Application : EventBase
-	{
-	public:
-		void init();
-		void prepare();
-		void mainLoop();
-		void update();
-		void render();
-		void destroy();
+namespace Engine {
+class Application : EventBase {
+   public:
+    void init();
+    void prepare();
+    void mainLoop();
+    void update();
+    void render();
+    void destroy();
 
-		virtual void onInit() {}
-		virtual void onPrepare() {}
-		virtual void onUpdate() {}
-		virtual void onDestroy() {}
+    virtual void onInit() {}
+    virtual void onPrepare() {}
+    virtual void onUpdate() {}
+    virtual void onDestroy() {}
 
-		std::unique_ptr<Device> device;
-		std::unique_ptr<Window> window;
-		std::unique_ptr<Renderer> renderer;
+    std::unique_ptr<Device> device;
+    std::unique_ptr<Window> window;
+    std::unique_ptr<Renderer> renderer;
 
-	protected:
-		std::string appName = "Renderer";
-	private:
-		void keyCallback(
-			GLFWwindow* window,
-			int key,
-			int scancode,
-			int action,
-			int mods) override;
+   protected:
+    std::string appName = "Renderer";
 
-		void resizeCallback(
-			GLFWwindow* window,
-			int width,
-			int height) override;
+   private:
+    void keyCallback(GLFWwindow* window, int key, int scancode, int action,
+                     int mods) override;
 
-		void mouseButtonCallback(
-			GLFWwindow* window,
-			int button,
-			int action,
-			int mods) override;
-	};
-}
+    void resizeCallback(GLFWwindow* window, int width, int height) override;
+
+    void mouseButtonCallback(GLFWwindow* window, int button, int action,
+                             int mods) override;
+};
+}  // namespace Engine
