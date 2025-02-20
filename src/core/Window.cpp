@@ -15,7 +15,7 @@ void Window::create() {
 
     GLFWimage images[1]{};
     srand(time(0));
-    int random = rand() % 8 + 1;
+    int random = rand() % 6 + 1;
     auto path = RESOURCE_DIR + std::format("icons/0{}.png", random);
     images[0].pixels = stbi_load(
         path.c_str(), &images[0].width, &images[0].height, 0, 4
