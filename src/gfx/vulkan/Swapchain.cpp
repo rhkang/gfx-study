@@ -21,8 +21,7 @@ void Swapchain::create(
         .imageColorSpace = colorSpace,
         .imageExtent = extent,
         .imageArrayLayers = 1,
-        .imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
-                      vk::ImageUsageFlagBits::eTransferDst,
+        .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
         .imageSharingMode = vk::SharingMode::eExclusive,
         .queueFamilyIndexCount = 1,
         .pQueueFamilyIndices = &queueFamilyIndex,

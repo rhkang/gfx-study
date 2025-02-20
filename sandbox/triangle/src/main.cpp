@@ -72,10 +72,9 @@ class SimpleRenderer : public Renderer {
         auto stagingBuffer = device->createBuffer();
         stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc);
 
-        void *data;
-        vmaMapMemory(device->getAllocator(), stagingBuffer.allocation, &data);
+        void *data = stagingBuffer.map();
         std::memcpy(data, vertices.data(), vbSize);
-        vmaUnmapMemory(device->getAllocator(), stagingBuffer.allocation);
+        stagingBuffer.unmap();
 
         auto cmdBuffer = device->allocateCommandBuffer();
         cmdBuffer.copyBuffer(
@@ -93,9 +92,9 @@ class SimpleRenderer : public Renderer {
         );
         indexCount = static_cast<uint32_t>(indices.size());
 
-        vmaMapMemory(device->getAllocator(), indexBuffer.allocation, &data);
+        data = indexBuffer.map();
         std::memcpy(data, indices.data(), sizeof(uint16_t) * indices.size());
-        vmaUnmapMemory(device->getAllocator(), indexBuffer.allocation);
+        indexBuffer.unmap();
     }
 
     void buildPipeline() {
@@ -153,8 +152,10 @@ class SimpleRenderer : public Renderer {
     void draw() override {
         auto &cmdBuffer = getCurrentDrawCmdBuffer();
 
+        auto extent = getFinalExtent();
+
         vk::RenderingAttachmentInfo colorAttachmentInfo{
-            .imageView = swapchain->getImageView(imageIndex),
+            .imageView = getFinalColorTexture().imageView,
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
@@ -166,7 +167,7 @@ class SimpleRenderer : public Renderer {
             .renderArea =
                 vk::Rect2D{
                     .offset = vk::Offset2D{0, 0},
-                    .extent = swapchain->extent,
+                    .extent = extent,
                 },
             .layerCount = 1,
             .colorAttachmentCount = 1,
@@ -180,7 +181,6 @@ class SimpleRenderer : public Renderer {
             indexBuffer.buffer, 0, vk::IndexType::eUint16
         );
 
-        auto extent = swapchain->getExtent();
         cmdBuffer.setViewport(0, getDefaultViewport(extent));
         cmdBuffer.setScissor(0, getDefaultScissor(extent));
 

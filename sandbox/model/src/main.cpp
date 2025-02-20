@@ -83,17 +83,18 @@ class ModelRenderer : public Renderer {
         sampleValueIndex = std::floor(std::log2((double)msaaSamples));
         maxSampleValueIndex = sampleValueIndex;
 
+        auto extent = getFinalExtent();
         depthTexture = device->createTexture();
         depthTexture.sampleCount = msaaSamples;
         depthTexture.allocate(
-            swapchain->getExtent(), 1, vk::Format::eD32SfloatS8Uint,
+            extent, 1, vk::Format::eD32SfloatS8Uint,
             vk::ImageUsageFlagBits::eDepthStencilAttachment,
             vk::ImageAspectFlagBits::eDepth
         );
         msaaTexture = device->createTexture();
         msaaTexture.sampleCount = msaaSamples;
         msaaTexture.allocate(
-            swapchain->getExtent(), 1, swapchain->format,
+            extent, 1, swapchain->format,
             vk::ImageUsageFlagBits::eColorAttachment,
             vk::ImageAspectFlagBits::eColor
         );
@@ -105,21 +106,7 @@ class ModelRenderer : public Renderer {
         buildPipeline();
     }
 
-    void onResize() override {
-        depthTexture.destroy();
-        depthTexture.allocate(
-            swapchain->getExtent(), 1, vk::Format::eD32SfloatS8Uint,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment,
-            vk::ImageAspectFlagBits::eDepth
-        );
-        msaaTexture.destroy();
-        msaaTexture.allocate(
-            swapchain->getExtent(), 1, swapchain->format,
-            vk::ImageUsageFlagBits::eColorAttachment,
-            vk::ImageAspectFlagBits::eColor
-        );
-        msaaTexture.createSampler();
-    }
+    void onSceneResize() override { recreateTextures(); }
 
     void onUpdate() override {
         static auto startTime = std::chrono::high_resolution_clock::now();
@@ -136,10 +123,10 @@ class ModelRenderer : public Renderer {
             glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f),
             glm::vec3(0.0f, 0.0f, 1.0f)
         );
+        auto extent = getFinalExtent();
         ubo.proj = glm::perspective(
-            glm::radians(45.0f),
-            swapchain->getExtent().width / (float)swapchain->getExtent().height,
-            0.1f, 10.0f
+            glm::radians(45.0f), extent.width / (float)extent.height, 0.1f,
+            10.0f
         );
         ubo.proj[1][1] *= -1;
 
@@ -172,32 +159,38 @@ class ModelRenderer : public Renderer {
         }
 
         if (msaaResetFlag) {
-            logicalDevice.waitIdle();
-
-            swapchain->recreate();
-            depthTexture.destroy();
-            msaaTexture.destroy();
-
-            depthTexture.sampleCount = msaaSamples;
-            depthTexture.allocate(
-                swapchain->getExtent(), 1, vk::Format::eD32SfloatS8Uint,
-                vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                vk::ImageAspectFlagBits::eDepth
-            );
-            msaaTexture.sampleCount = msaaSamples;
-            msaaTexture.allocate(
-                swapchain->getExtent(), 1, swapchain->format,
-                vk::ImageUsageFlagBits::eColorAttachment,
-                vk::ImageAspectFlagBits::eColor
-            );
-            msaaTexture.createSampler();
+            recreateTextures();
 
             logicalDevice.destroyPipeline(pipeline);
             logicalDevice.destroyPipelineLayout(pipelineLayout);
 
             buildPipeline();
+
             msaaResetFlag = false;
         }
+    }
+
+    void recreateTextures() {
+        auto logicalDevice = device->getLogicalDevice();
+        logicalDevice.waitIdle();
+
+        depthTexture.destroy();
+        msaaTexture.destroy();
+
+        auto extent = getFinalExtent();
+        depthTexture.sampleCount = msaaSamples;
+        depthTexture.allocate(
+            extent, 1, vk::Format::eD32SfloatS8Uint,
+            vk::ImageUsageFlagBits::eDepthStencilAttachment,
+            vk::ImageAspectFlagBits::eDepth
+        );
+        msaaTexture.sampleCount = msaaSamples;
+        msaaTexture.allocate(
+            extent, 1, swapchain->format,
+            vk::ImageUsageFlagBits::eColorAttachment,
+            vk::ImageAspectFlagBits::eColor
+        );
+        msaaTexture.createSampler();
     }
 
     void onDestroy() override {
@@ -229,14 +222,15 @@ class ModelRenderer : public Renderer {
                         {
                             .depth = 1.0f,
                             .stencil = 0,
-                        }},
+                        }
+                },
         };
 
         vk::RenderingInfo renderingInfo{
             .renderArea =
                 vk::Rect2D{
                     .offset = vk::Offset2D{0, 0},
-                    .extent = swapchain->extent,
+                    .extent = getFinalExtent(),
                 },
             .layerCount = 1,
             .pDepthAttachment = &depthAttachmentInfo,
@@ -246,8 +240,9 @@ class ModelRenderer : public Renderer {
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue = vk::ClearColorValue{std::array<float, 4>{
-                0.0f, 0.0f, 0.0f, 1.0f}},
+            .clearValue =
+                vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}
+                },
         };
 
         bool useMultiSampling = (msaaSamples | vk::SampleCountFlagBits::e1) !=
@@ -257,12 +252,12 @@ class ModelRenderer : public Renderer {
             renderingAttachmentInfo.resolveMode =
                 vk::ResolveModeFlagBits::eAverage;
             renderingAttachmentInfo.resolveImageView =
-                swapchain->getImageView(imageIndex);
+                getFinalColorTexture().imageView;
             renderingAttachmentInfo.resolveImageLayout =
                 vk::ImageLayout::eColorAttachmentOptimal;
         } else {
             renderingAttachmentInfo.imageView =
-                swapchain->getImageView(imageIndex);
+                getFinalColorTexture().imageView;
         }
 
         renderingInfo.colorAttachmentCount = 1;
@@ -280,7 +275,7 @@ class ModelRenderer : public Renderer {
             {uboSet, textureSet}, {}
         );
 
-        auto extent = swapchain->getExtent();
+        auto extent = getFinalExtent();
         cmdBuffer.setViewport(0, getDefaultViewport(extent));
         cmdBuffer.setScissor(0, getDefaultScissor(extent));
 
@@ -295,13 +290,11 @@ class ModelRenderer : public Renderer {
 
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight), ImGuiCond_Once);
         ImGui::SetNextWindowPos(
-            ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - 10, 10),
-            ImGuiCond_Always
+            ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - 10, 40),
+            ImGuiCond_Once
         );
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoCollapse;
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
 
         ImGui::Begin("Control", nullptr, flags);
         ImGui::Text("Model Rotate");

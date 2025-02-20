@@ -31,11 +31,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
     void* /*pUserData*/
 ) {
     if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
-        LOG_ERROR(pCallbackData->pMessage);
+        LOG_ERROR("{}\n", pCallbackData->pMessage);
     } else if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
-        LOG_WARN(pCallbackData->pMessage);
+        LOG_WARN("{}\n", pCallbackData->pMessage);
     } else {
-        LOG(pCallbackData->pMessage);
+        LOG("{}\n", pCallbackData->pMessage);
     }
 
     return VK_FALSE;
