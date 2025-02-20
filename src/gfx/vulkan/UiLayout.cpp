@@ -81,25 +81,110 @@ void UiLayout::prepareFrame() {
     ImGui::NewFrame();
 }
 
-void UiLayout::draw(vk::CommandBuffer& cmdBuffer) {
-    showMetrics();
+void UiLayout::draw() {
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(1.0f);
+    if (ImGui::Begin(
+            "Root", nullptr,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoBringToFrontOnFocus |
+                ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoNav |
+                ImGuiWindowFlags_MenuBar
+        )) {
+        ImGuiID dockspaceId = ImGui::GetID("Root");
+        ImGui::DockSpace(
+            dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None
+        );
+
+        showMenuBar();
+    }
+    ImGui::End();
+
+    if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
+        isShowMetrics = !isShowMetrics;
+    }
+
+    if (isShowScene) {
+        showScene();
+    }
+    if (isShowMetrics) {
+        device->getUiLayout()->showMetrics();
+    }
+    if (isShowDemo) {
+        ImGui::ShowDemoWindow();
+    }
+}
+
+void UiLayout::record(vk::CommandBuffer& cmdBuffer) {
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
 }
 
+void UiLayout::addOffscreenTextureForImGui(
+    VkSampler sampler, VkImageView imageView, VkImageLayout layout
+) {
+    offscreenInfo.descriptorSet =
+        ImGui_ImplVulkan_AddTexture(sampler, imageView, layout);
+}
+
+void UiLayout::removeOffscreenTextureForImGui() {
+    ImGui_ImplVulkan_RemoveTexture(offscreenInfo.descriptorSet);
+}
+
+void UiLayout::showMenuBar() {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::BeginMenu("Windows")) {
+                ImGui::MenuItem("Scene", nullptr, &isShowScene);
+                ImGui::MenuItem("Metrics", "F1", &isShowMetrics);
+                ImGui::MenuItem("Demo", nullptr, &isShowDemo);
+
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
+void UiLayout::showScene() {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+    if (ImGui::Begin("Scene", nullptr, ImGuiConfigFlags_DockingEnable)) {
+        offscreenInfo.doRender = true;
+
+        ImVec2 contentSize = ImGui::GetContentRegionAvail();
+        uint32_t width = uint32_t(floor(contentSize.x));
+        uint32_t height = uint32_t(floor(contentSize.y));
+        ImGui::Image(
+            (ImTextureID)offscreenInfo.descriptorSet, ImVec2(width, height)
+        );
+
+        if (width != offscreenInfo.width || height != offscreenInfo.height) {
+            offscreenInfo.width = width;
+            offscreenInfo.height = height;
+            offscreenInfo.sizeChanged = true;
+        }
+    } else {
+        offscreenInfo.doRender = false;
+    }
+
+    ImGui::End();
+    ImGui::PopStyleVar(3);
+}
+
 void UiLayout::showMetrics() {
-    static bool open = true;
     static bool showExtraDebug = true;
     static float fpsHistory[100] = {};
     static int fpsIndex = 0;
     static float renderTimeHistory[100] = {};
     static int renderTimeIndex = 0;
-
-    if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
-        open = !open;
-    }
-
-    if (!open) return;
 
     int boxWidth = fontScale * 15;
     int boxHeight = fontScale * 25;
@@ -114,11 +199,9 @@ void UiLayout::showMetrics() {
         ImVec2(boxWidth, boxHeight), ImVec2(boxWidth, fontScale * 1000)
     );
 
-    ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize |
-                             ImGuiWindowFlags_NoFocusOnAppearing |
-                             ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
 
-    if (ImGui::Begin("Debug Info", &open, flags)) {
+    if (ImGui::Begin("Debug Info", nullptr, flags)) {
         static float fps = 0.0f;
         static float lastTime = 0.0f;
         float elapsedTime = ImGui::GetTime();

@@ -30,11 +30,21 @@ class Renderer {
         return vk::Rect2D(vk::Offset2D(0, 0), extent);
     }
 
+    inline Texture &getFinalColorTexture() {
+        return offscreenResources.colorTexture;
+    }
+
+    inline vk::Extent2D getFinalExtent() {
+        return device->getUiLayout()->getOffscreenExtent();
+    }
+
     virtual void onInit() {}
     virtual void onPrepare() {}
     virtual void onUpdate() {}
     virtual void onDestroy() {}
-    virtual void onResize() {}
+    virtual void onWindowResize() {}
+    virtual void onSceneResize() {}
+
 
     virtual void draw() = 0;
     virtual void drawUi() {}
@@ -54,6 +64,13 @@ class Renderer {
 
     std::vector<vk::CommandBuffer> drawCmdBuffers;
     std::unique_ptr<Swapchain> swapchain;
+
+    vk::AttachmentLoadOp swapchainLoadOp = vk::AttachmentLoadOp::eClear;
+
+    struct
+    {
+        Texture colorTexture;
+    } offscreenResources;
 
     uint32_t currentFrame = 0;
 

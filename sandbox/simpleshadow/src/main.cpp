@@ -122,10 +122,10 @@ class ShadowPassRenderer : public Renderer {
         logicalDevice.destroyDescriptorSetLayout(shadowDescriptorSetLayout);
     }
 
-    void onResize() override {
+    void onSceneResize() override {
         depthTexture.destroy();
         depthTexture.allocate(
-            swapchain->getExtent(), 1, vk::Format::eD32Sfloat,
+            getFinalExtent(), 1, vk::Format::eD32Sfloat,
             vk::ImageUsageFlagBits::eDepthStencilAttachment,
             vk::ImageAspectFlagBits::eDepth
         );
@@ -136,7 +136,7 @@ class ShadowPassRenderer : public Renderer {
 
         depthTexture = device->createTexture();
         depthTexture.allocate(
-            swapchain->getExtent(), 1, vk::Format::eD32Sfloat,
+            getFinalExtent(), 1, vk::Format::eD32Sfloat,
             vk::ImageUsageFlagBits::eDepthStencilAttachment,
             vk::ImageAspectFlagBits::eDepth
         );
@@ -278,8 +278,8 @@ class ShadowPassRenderer : public Renderer {
         );
         ubo.proj = glm::perspective(
             glm::radians(45.0f),
-            swapchain->getExtent().width / (float)swapchain->getExtent().height,
-            0.1f, 1000.0f
+            getFinalExtent().width / (float)getFinalExtent().height, 0.1f,
+            1000.0f
         );
         ubo.proj[1][1] *= -1;
 
@@ -330,7 +330,8 @@ class ShadowPassRenderer : public Renderer {
                         {
                             .depth = 1.0f,
                             .stencil = 0,
-                        }},
+                        }
+                },
         };
 
         vk::RenderingInfo shadowpassInfo{
@@ -389,12 +390,13 @@ class ShadowPassRenderer : public Renderer {
         );
 
         vk::RenderingAttachmentInfo colorAttachmentInfo{
-            .imageView = swapchain->getImageView(imageIndex),
+            .imageView = getFinalColorTexture().imageView,
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue = vk::ClearColorValue{std::array<float, 4>{
-                0.0f, 0.0f, 0.0f, 1.0f}},
+            .clearValue =
+                vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}
+                },
         };
 
         vk::RenderingAttachmentInfo depthAttachmentInfo{
@@ -408,14 +410,15 @@ class ShadowPassRenderer : public Renderer {
                         {
                             .depth = 1.0f,
                             .stencil = 0,
-                        }},
+                        }
+                },
         };
 
         vk::RenderingInfo writeToSwapchain{
             .renderArea =
                 {
                     .offset = {0, 0},
-                    .extent = swapchain->extent,
+                    .extent = getFinalExtent(),
                 },
             .layerCount = 1,
             .colorAttachmentCount = 1,
@@ -432,7 +435,7 @@ class ShadowPassRenderer : public Renderer {
             {shadowDescriptorSet}, {}
         );
 
-        auto extent = swapchain->getExtent();
+        auto extent = getFinalExtent();
         cmdBuffer.setViewport(0, getDefaultViewport(extent));
         cmdBuffer.setScissor(0, getDefaultScissor(extent));
 
@@ -459,14 +462,14 @@ class ShadowPassRenderer : public Renderer {
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight), ImGuiCond_Once);
         ImGui::SetNextWindowPos(
             ImVec2(
-                ImGui::GetIO().DisplaySize.x - boxWidth - fontScale, fontScale
+                ImGui::GetIO().DisplaySize.x - boxWidth - fontScale,
+                fontScale * 4
             ),
-            ImGuiCond_Always
+            ImGuiCond_Once
         );
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoCollapse;
+        ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
         ImGui::Begin("Control", nullptr, flags);
 
@@ -516,9 +519,9 @@ class ShadowPassRenderer : public Renderer {
             ImVec2(
                 ImGui::GetIO().DisplaySize.x - boxWidth - texturePrintSize -
                     fontScale * 3,
-                fontScale
+                fontScale * 4
             ),
-            ImGuiCond_Always
+            ImGuiCond_Once
         );
         ImGui::Begin("Shadow Map", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Image(
@@ -600,7 +603,8 @@ class ShadowPassRenderer : public Renderer {
         finalImageBuilder.depthAttachmentFormat = vk::Format::eD32Sfloat;
 
         vk::DescriptorSetLayout descriptorSetLayouts[2] = {
-            sceneData.descriptorSetLayout, shadowDescriptorSetLayout};
+            sceneData.descriptorSetLayout, shadowDescriptorSetLayout
+        };
         finalImagePipelineLayout = logicalDevice.createPipelineLayout({
             .setLayoutCount = 2,
             .pSetLayouts = descriptorSetLayouts,

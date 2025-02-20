@@ -30,7 +30,6 @@ endfunction(buildAll)
 
 set(APPS
     triangle
-    simpletexture
     model
     simpleshadow
 )

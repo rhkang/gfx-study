@@ -78,6 +78,8 @@ void Renderer::init(Device *device) {
 void Renderer::destroy() {
     onDestroy();
 
+    getFinalColorTexture().destroy();
+
     auto logicalDevice = device->getLogicalDevice();
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -90,9 +92,57 @@ void Renderer::destroy() {
     logicalDevice.destroyQueryPool(queryPool);
 }
 
-void Renderer::prepare() { onPrepare(); }
+void Renderer::prepare() {
+    auto &colorTexture = getFinalColorTexture();
+    colorTexture = device->createTexture();
+    colorTexture.allocate(
+        getFinalExtent(), 1, swapchain->format,
+        vk::ImageUsageFlagBits::eColorAttachment |
+            vk::ImageUsageFlagBits::eSampled,
+        vk::ImageAspectFlagBits::eColor
+    );
+    colorTexture.createSampler();
 
-void Renderer::update() { onUpdate(); }
+    device->getUiLayout()->addOffscreenTextureForImGui(
+        colorTexture.sampler, colorTexture.imageView,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
+
+    onPrepare();
+}
+
+void Renderer::update() {
+    auto uiLayout = device->getUiLayout();
+
+    if (uiLayout->getOffscreenSizeChanged()) {
+        device->getLogicalDevice().waitIdle();
+
+        if (!uiLayout->isOffscreenRenderable()) {
+            return;
+        }
+
+        auto &colorTexture = getFinalColorTexture();
+        colorTexture.destroy();
+        colorTexture.allocate(
+            getFinalExtent(), 1, swapchain->format,
+            vk::ImageUsageFlagBits::eColorAttachment |
+                vk::ImageUsageFlagBits::eSampled,
+            vk::ImageAspectFlagBits::eColor
+        );
+        colorTexture.createSampler();
+        uiLayout->removeOffscreenTextureForImGui();
+        uiLayout->addOffscreenTextureForImGui(
+            colorTexture.sampler, colorTexture.imageView,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+
+        onSceneResize();
+
+        uiLayout->setOffscreenSizeChanged(false);
+    }
+
+    onUpdate();
+}
 
 void Renderer::render() {
     prepareFrame();
@@ -136,14 +186,43 @@ void Renderer::drawFrame() {
         swapchain->getImage(imageIndex)
     );
 
-    draw();
+    if (device->getUiLayout()->isOffscreenRenderable()) {
+        imageLayoutTransition(
+            cmdBuffer, vk::ImageAspectFlagBits::eColor,
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput,
+            vk::AccessFlagBits::eNone,
+            vk::AccessFlagBits::eColorAttachmentWrite,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            getFinalColorTexture().image
+        );
 
-    vk::RenderingAttachmentInfo finalColorAttachmentInfo{
+        draw();
+
+        imageLayoutTransition(
+            cmdBuffer, vk::ImageAspectFlagBits::eColor,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::AccessFlagBits::eColorAttachmentWrite,
+            vk::AccessFlagBits::eShaderRead,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            getFinalColorTexture().image
+        );
+    }
+
+    vk::RenderingAttachmentInfo swapChainAttachmentInfo{
         .imageView = swapchain->getImageView(imageIndex),
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-        .loadOp = vk::AttachmentLoadOp::eLoad,
+        .loadOp = swapchainLoadOp,
         .storeOp = vk::AttachmentStoreOp::eStore,
     };
+    if (swapchainLoadOp == vk::AttachmentLoadOp::eClear) {
+        swapChainAttachmentInfo.clearValue = vk::ClearValue{
+            .color = std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}
+        };
+    }
 
     vk::RenderingInfo uiRenderingInfo{
         .renderArea =
@@ -153,12 +232,13 @@ void Renderer::drawFrame() {
             },
         .layerCount = 1,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &finalColorAttachmentInfo,
+        .pColorAttachments = &swapChainAttachmentInfo,
     };
 
     cmdBuffer.beginRendering(uiRenderingInfo);
+    device->getUiLayout()->draw();
     drawUi();
-    device->getUiLayout()->draw(cmdBuffer);
+    device->getUiLayout()->record(cmdBuffer);
     cmdBuffer.endRendering();
 
     imageLayoutTransition(
@@ -181,10 +261,11 @@ void Renderer::submitFrame() {
     auto logicalDevice = device->getLogicalDevice();
 
     vk::PipelineStageFlags waitStages[] = {
-        vk::PipelineStageFlagBits::eColorAttachmentOutput};
+        vk::PipelineStageFlagBits::eColorAttachmentOutput
+    };
     vk::Semaphore waitSemaphores[] = {semaphores.imageAvailable[currentFrame]};
-    vk::Semaphore signalSemaphores[] = {
-        semaphores.renderFinished[currentFrame]};
+    vk::Semaphore signalSemaphores[] = {semaphores.renderFinished[currentFrame]
+    };
 
     queue.submit(
         {vk::SubmitInfo{
@@ -241,6 +322,6 @@ void Renderer::handleWindowResize() {
     }
 
     swapchain->recreate(extent);
-    onResize();
+    onWindowResize();
 }
 }  // namespace Engine
