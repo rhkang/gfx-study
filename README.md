@@ -17,7 +17,7 @@ Required Features
 
 ### Shader Compile
 ```
-> scripts/hlsl_compile.sh
+> scripts/hlsl_compile.bat
 ```
 
 ### Build Project

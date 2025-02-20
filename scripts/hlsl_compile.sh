@@ -7,7 +7,7 @@ script_dir=$(dirname "$script")
 project_root=$(cd "$script_dir/../" && pwd)
 dxc_root=$(cd "$project_root/tool/dxc" && pwd)
 
-dxc="$dxc_root/bin/dxc"
+dxc="$dxc_root/linux/bin/dxc"
 
 if [ ! -f "$dxc" ]; then
     echo "Compiler: $dxc not exists."
