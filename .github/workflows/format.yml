@@ -10,12 +10,12 @@ jobs:
 
     steps:
     - name: Checkout Repo
-    - uses: actions/chockout@v4
+      uses: actions/checkout@v4
 
     - name: Verify if script exists
       run: |
-        if [! -f "./scripts/format.sh"]; then
-          echo "Error: clang-format script is missing
+        if [ ! -f "./scripts/format.sh" ]; then
+          echo "Error: clang-format script is missing"
           exit 1
         fi
 
@@ -26,4 +26,6 @@ jobs:
       run: |
         chmod +x ./scripts/format.sh
         ./scripts/format.sh
-        get diff --exit-code || (echo "Code style issues detected. Run clang-format before push." && exit 1)
+
+        git config core.filemode false
+        git diff --exit-code || (echo "Code style issues detected. Run clang-format before push." && exit 1)
