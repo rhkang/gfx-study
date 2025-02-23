@@ -4,7 +4,7 @@ Param(
     $targetDirs = @("$projectRoot\src", "$projectRoot\sandbox")
 )
 
-Write-Host "Script root: $currentDirectory"
+Write-Host "Script directory: $currentDirectory"
 Write-Host "Project root: $projectRoot"
 Write-Host "Target directories: $targetDirs"
 
@@ -15,8 +15,13 @@ for ($i = 0; $i -lt $targetDirs.Length; $i++) {
     $files = Get-ChildItem -Path $targetDir -Recurse -Include *.c, *.h, *.cpp, *.hpp
 
     foreach ($file in $files) {
-        Write-Host "Formatting $file"
+        $originalContent = Get-Content $file.FullName -Raw
         clang-format -i --style=file:$projectRoot\.clang-format $file.FullName
+        $formattedContent = Get-Content $file.FullName -Raw
+
+        if ($originalContent -ne $formattedContent) {
+            Write-Host "Formatted: $file"
+        }
     }
 }
 
