@@ -1,0 +1,29 @@
+name: Format check
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-clang-format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repo
+    - uses: actions/chockout@v4
+
+    - name: Verify if script exists
+      run: |
+        if [! -f "./scripts/format.sh"]; then
+          echo "Error: clang-format script is missing
+          exit 1
+        fi
+
+    - name: Install Clang-Format
+      run: sudo apt-get install -y clang-format
+
+    - name: Check diff
+      run: |
+        chmod +x ./scripts/format.sh
+        ./scripts/format.sh
+        get diff --exit-code || (echo "Code style issues detected. Run clang-format before push." && exit 1)
