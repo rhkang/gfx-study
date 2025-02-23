@@ -16,7 +16,7 @@ for ($i = 0; $i -lt $targetDirs.Length; $i++) {
 
     foreach ($file in $files) {
         Write-Host "Formatting $file"
-        clang-format -i $file.FullName
+        clang-format -i --style=file:$projectRoot\.clang-format $file.FullName
     }
 }
 

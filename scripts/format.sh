@@ -13,7 +13,7 @@ directories=(
 format_files() {
     for dir in "${directories[@]}"; do
         find "$dir" -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | while read -r file; do
-            clang-format -i "$file"
+            clang-format -i --style=file:$root/.clang-format "$file"
             echo "Formatted $file"
         done
     done
