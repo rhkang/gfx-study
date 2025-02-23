@@ -95,18 +95,15 @@ void Renderer::destroy() {
 void Renderer::prepare() {
     auto &colorTexture = getFinalColorTexture();
     colorTexture = device->createTexture();
-    colorTexture.allocate(
-        getFinalExtent(), 1, swapchain->format,
-        vk::ImageUsageFlagBits::eColorAttachment |
-            vk::ImageUsageFlagBits::eSampled,
-        vk::ImageAspectFlagBits::eColor
-    );
+    colorTexture.allocate(getFinalExtent(), 1, swapchain->format,
+                          vk::ImageUsageFlagBits::eColorAttachment |
+                              vk::ImageUsageFlagBits::eSampled,
+                          vk::ImageAspectFlagBits::eColor);
     colorTexture.createSampler();
 
     device->getUiLayout()->addOffscreenTextureForImGui(
         colorTexture.sampler, colorTexture.imageView,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     onPrepare();
 }
@@ -123,18 +120,15 @@ void Renderer::update() {
 
         auto &colorTexture = getFinalColorTexture();
         colorTexture.destroy();
-        colorTexture.allocate(
-            getFinalExtent(), 1, swapchain->format,
-            vk::ImageUsageFlagBits::eColorAttachment |
-                vk::ImageUsageFlagBits::eSampled,
-            vk::ImageAspectFlagBits::eColor
-        );
+        colorTexture.allocate(getFinalExtent(), 1, swapchain->format,
+                              vk::ImageUsageFlagBits::eColorAttachment |
+                                  vk::ImageUsageFlagBits::eSampled,
+                              vk::ImageAspectFlagBits::eColor);
         colorTexture.createSampler();
         uiLayout->removeOffscreenTextureForImGui();
         uiLayout->addOffscreenTextureForImGui(
             colorTexture.sampler, colorTexture.imageView,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        );
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         onSceneResize();
 
@@ -152,9 +146,8 @@ void Renderer::render() {
 
 void Renderer::prepareFrame() {
     auto logicalDevice = device->getLogicalDevice();
-    auto result = logicalDevice.waitForFences(
-        fences.inFlight[currentFrame], vk::True, UINT64_MAX
-    );
+    auto result = logicalDevice.waitForFences(fences.inFlight[currentFrame],
+                                              vk::True, UINT64_MAX);
     assert(result == vk::Result::eSuccess);
 
     imageIndex =
@@ -173,9 +166,8 @@ void Renderer::drawFrame() {
     cmdBuffer.reset();
     cmdBuffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
     cmdBuffer.resetQueryPool(queryPool, 0, 2);
-    cmdBuffer.writeTimestamp(
-        vk::PipelineStageFlagBits::eTopOfPipe, queryPool, 0
-    );
+    cmdBuffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, queryPool,
+                             0);
 
     imageLayoutTransition(
         cmdBuffer, vk::ImageAspectFlagBits::eColor,
@@ -183,33 +175,28 @@ void Renderer::drawFrame() {
         vk::PipelineStageFlagBits::eColorAttachmentOutput,
         vk::AccessFlagBits::eNone, vk::AccessFlagBits::eColorAttachmentWrite,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal,
-        swapchain->getImage(imageIndex)
-    );
+        swapchain->getImage(imageIndex));
 
     if (device->getUiLayout()->isOffscreenRenderable()) {
-        imageLayoutTransition(
-            cmdBuffer, vk::ImageAspectFlagBits::eColor,
-            vk::PipelineStageFlagBits::eTopOfPipe,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::AccessFlagBits::eNone,
-            vk::AccessFlagBits::eColorAttachmentWrite,
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            getFinalColorTexture().image
-        );
+        imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eColor,
+                              vk::PipelineStageFlagBits::eTopOfPipe,
+                              vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                              vk::AccessFlagBits::eNone,
+                              vk::AccessFlagBits::eColorAttachmentWrite,
+                              vk::ImageLayout::eUndefined,
+                              vk::ImageLayout::eColorAttachmentOptimal,
+                              getFinalColorTexture().image);
 
         draw();
 
-        imageLayoutTransition(
-            cmdBuffer, vk::ImageAspectFlagBits::eColor,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits::eFragmentShader,
-            vk::AccessFlagBits::eColorAttachmentWrite,
-            vk::AccessFlagBits::eShaderRead,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            getFinalColorTexture().image
-        );
+        imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eColor,
+                              vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                              vk::PipelineStageFlagBits::eFragmentShader,
+                              vk::AccessFlagBits::eColorAttachmentWrite,
+                              vk::AccessFlagBits::eShaderRead,
+                              vk::ImageLayout::eColorAttachmentOptimal,
+                              vk::ImageLayout::eShaderReadOnlyOptimal,
+                              getFinalColorTexture().image);
     }
 
     vk::RenderingAttachmentInfo swapChainAttachmentInfo{
@@ -220,8 +207,7 @@ void Renderer::drawFrame() {
     };
     if (swapchainLoadOp == vk::AttachmentLoadOp::eClear) {
         swapChainAttachmentInfo.clearValue = vk::ClearValue{
-            .color = std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}
-        };
+            .color = std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}};
     }
 
     vk::RenderingInfo uiRenderingInfo{
@@ -247,12 +233,10 @@ void Renderer::drawFrame() {
         vk::PipelineStageFlagBits::eBottomOfPipe,
         vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eNone,
         vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::ePresentSrcKHR, swapchain->getImage(imageIndex)
-    );
+        vk::ImageLayout::ePresentSrcKHR, swapchain->getImage(imageIndex));
 
-    cmdBuffer.writeTimestamp(
-        vk::PipelineStageFlagBits::eBottomOfPipe, queryPool, 1
-    );
+    cmdBuffer.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,
+                             queryPool, 1);
     cmdBuffer.end();
 }
 
@@ -261,24 +245,21 @@ void Renderer::submitFrame() {
     auto logicalDevice = device->getLogicalDevice();
 
     vk::PipelineStageFlags waitStages[] = {
-        vk::PipelineStageFlagBits::eColorAttachmentOutput
-    };
+        vk::PipelineStageFlagBits::eColorAttachmentOutput};
     vk::Semaphore waitSemaphores[] = {semaphores.imageAvailable[currentFrame]};
-    vk::Semaphore signalSemaphores[] = {semaphores.renderFinished[currentFrame]
-    };
+    vk::Semaphore signalSemaphores[] = {
+        semaphores.renderFinished[currentFrame]};
 
-    queue.submit(
-        {vk::SubmitInfo{
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = waitSemaphores,
-            .pWaitDstStageMask = waitStages,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &drawCmdBuffers[currentFrame],
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = signalSemaphores,
-        }},
-        fences.inFlight[currentFrame]
-    );
+    queue.submit({vk::SubmitInfo{
+                     .waitSemaphoreCount = 1,
+                     .pWaitSemaphores = waitSemaphores,
+                     .pWaitDstStageMask = waitStages,
+                     .commandBufferCount = 1,
+                     .pCommandBuffers = &drawCmdBuffers[currentFrame],
+                     .signalSemaphoreCount = 1,
+                     .pSignalSemaphores = signalSemaphores,
+                 }},
+                 fences.inFlight[currentFrame]);
 
     vk::SwapchainKHR swapchains[] = {swapchain->getSwapchain()};
     VkPresentInfoKHR presentInfo{
@@ -298,8 +279,7 @@ void Renderer::submitFrame() {
 
     vk::Result queryResult = logicalDevice.getQueryPoolResults(
         queryPool, 0, 2, sizeof(uint64_t) * 2, &timestamps, sizeof(uint64_t),
-        vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait
-    );
+        vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
     if (queryResult == vk::Result::eSuccess) {
         uint64_t startTimestamp = timestamps[0];
         uint64_t endTimestamp = timestamps[1];
@@ -314,8 +294,7 @@ void Renderer::submitFrame() {
 void Renderer::handleWindowResize() {
     vk::SurfaceCapabilitiesKHR surfaceCapabilities =
         device->getPhysicalDevice().getSurfaceCapabilitiesKHR(
-            device->getSurface()
-        );
+            device->getSurface());
     vk::Extent2D extent = surfaceCapabilities.currentExtent;
     if (extent.width == 0 && extent.height == 0) {
         return;

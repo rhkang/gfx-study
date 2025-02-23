@@ -26,9 +26,8 @@ class UiLayout {
     double renderTime = 0.0;
     float fontScale = 24.0f;
 
-    void addOffscreenTextureForImGui(
-        VkSampler sampler, VkImageView imageView, VkImageLayout layout
-    );
+    void addOffscreenTextureForImGui(VkSampler sampler, VkImageView imageView,
+                                     VkImageLayout layout);
     void removeOffscreenTextureForImGui();
 
     inline bool isOffscreenRenderable() const {

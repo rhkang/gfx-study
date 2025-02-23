@@ -33,14 +33,12 @@ class Application : EventBase {
     std::string appName = "Renderer";
 
    private:
-    void keyCallback(
-        GLFWwindow* window, int key, int scancode, int action, int mods
-    ) override;
+    void keyCallback(GLFWwindow* window, int key, int scancode, int action,
+                     int mods) override;
 
     void resizeCallback(GLFWwindow* window, int width, int height) override;
 
-    void mouseButtonCallback(
-        GLFWwindow* window, int button, int action, int mods
-    ) override;
+    void mouseButtonCallback(GLFWwindow* window, int button, int action,
+                             int mods) override;
 };
 }  // namespace Engine

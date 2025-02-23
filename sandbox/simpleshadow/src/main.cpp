@@ -124,22 +124,18 @@ class ShadowPassRenderer : public Renderer {
 
     void onSceneResize() override {
         depthTexture.destroy();
-        depthTexture.allocate(
-            getFinalExtent(), 1, vk::Format::eD32Sfloat,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment,
-            vk::ImageAspectFlagBits::eDepth
-        );
+        depthTexture.allocate(getFinalExtent(), 1, vk::Format::eD32Sfloat,
+                              vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                              vk::ImageAspectFlagBits::eDepth);
     }
 
     void onPrepare() override {
         msaaSamples = vk::SampleCountFlagBits::e1;
 
         depthTexture = device->createTexture();
-        depthTexture.allocate(
-            getFinalExtent(), 1, vk::Format::eD32Sfloat,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment,
-            vk::ImageAspectFlagBits::eDepth
-        );
+        depthTexture.allocate(getFinalExtent(), 1, vk::Format::eD32Sfloat,
+                              vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                              vk::ImageAspectFlagBits::eDepth);
 
         sceneData.vertexBuffer = device->createBuffer();
         sceneData.indexBuffer = device->createBuffer();
@@ -147,14 +143,11 @@ class ShadowPassRenderer : public Renderer {
 
         sceneData.vertexBuffer.allocate(
             100000, vk::BufferUsageFlagBits::eVertexBuffer |
-                        vk::BufferUsageFlagBits::eTransferDst
-        );
-        sceneData.indexBuffer.allocate(
-            1000000, vk::BufferUsageFlagBits::eIndexBuffer
-        );
+                        vk::BufferUsageFlagBits::eTransferDst);
+        sceneData.indexBuffer.allocate(1000000,
+                                       vk::BufferUsageFlagBits::eIndexBuffer);
         sceneData.uniformBuffer.allocate(
-            sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, true
-        );
+            sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, true);
 
         vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding{
             .binding = 0,
@@ -166,16 +159,14 @@ class ShadowPassRenderer : public Renderer {
 
         auto logicalDevice = device->getLogicalDevice();
         sceneData.descriptorSetLayout = logicalDevice.createDescriptorSetLayout(
-            {.bindingCount = 1, .pBindings = &descriptorSetLayoutBinding}
-        );
+            {.bindingCount = 1, .pBindings = &descriptorSetLayoutBinding});
 
         sceneData.descriptorSet =
             logicalDevice
                 .allocateDescriptorSets(
                     {.descriptorPool = device->getDescriptorPool(),
                      .descriptorSetCount = 1,
-                     .pSetLayouts = &sceneData.descriptorSetLayout}
-                )
+                     .pSetLayouts = &sceneData.descriptorSetLayout})
                 .front();
 
         shadowTexture = device->createTexture();
@@ -188,24 +179,21 @@ class ShadowPassRenderer : public Renderer {
         };
 
         shadowDescriptorSetLayout = logicalDevice.createDescriptorSetLayout(
-            {.bindingCount = 1, .pBindings = &shadowDescriptorSetLayoutBinding}
-        );
+            {.bindingCount = 1,
+             .pBindings = &shadowDescriptorSetLayoutBinding});
 
         shadowDescriptorSet =
             logicalDevice
                 .allocateDescriptorSets(
                     {.descriptorPool = device->getDescriptorPool(),
                      .descriptorSetCount = 1,
-                     .pSetLayouts = &shadowDescriptorSetLayout}
-                )
+                     .pSetLayouts = &shadowDescriptorSetLayout})
                 .front();
 
-        shadowTexture.allocate(
-            shadowMapExtent, 1, vk::Format::eD32Sfloat,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment |
-                vk::ImageUsageFlagBits::eSampled,
-            vk::ImageAspectFlagBits::eDepth
-        );
+        shadowTexture.allocate(shadowMapExtent, 1, vk::Format::eD32Sfloat,
+                               vk::ImageUsageFlagBits::eDepthStencilAttachment |
+                                   vk::ImageUsageFlagBits::eSampled,
+                               vk::ImageAspectFlagBits::eDepth);
         shadowTexture.addressMode = vk::SamplerAddressMode::eClampToBorder;
         shadowTexture.createSampler();
 
@@ -258,8 +246,7 @@ class ShadowPassRenderer : public Renderer {
 
         cubeInfo.model = glm::translate(
             glm::scale(cubeInfo.model, glm::vec3(0.5f, 0.5f, 0.5f)),
-            glm::vec3(0.0f, 0.0f, 0.8f)
-        );
+            glm::vec3(0.0f, 0.0f, 0.8f));
         planeInfo.model =
             glm::scale(planeInfo.model, glm::vec3(100.0, 100.0, 0.0));
         perObjectData.model = glm::mat4(1.0f);
@@ -267,28 +254,22 @@ class ShadowPassRenderer : public Renderer {
 
         shadowSetForImGui = ImGui_ImplVulkan_AddTexture(
             shadowTexture.sampler, shadowTexture.imageView,
-            VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL
-        );
+            VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
     }
 
     void onUpdate() override {
-        ubo.view = glm::lookAt(
-            glm::vec3(distance), glm::vec3(0.0f, 0.0f, 0.5f),
-            glm::vec3(0.0f, 0.0f, 1.0f)
-        );
+        ubo.view = glm::lookAt(glm::vec3(distance), glm::vec3(0.0f, 0.0f, 0.5f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(
             glm::radians(45.0f),
             getFinalExtent().width / (float)getFinalExtent().height, 0.1f,
-            1000.0f
-        );
+            1000.0f);
         ubo.proj[1][1] *= -1;
 
-        ubo.lightView = glm::lookAt(
-            light.pos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)
-        );
-        ubo.lightProj = glm::ortho(
-            -shadowBound, shadowBound, -shadowBound, shadowBound, 0.1f, 100.0f
-        );
+        ubo.lightView = glm::lookAt(light.pos, glm::vec3(0.0f),
+                                    glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.lightProj = glm::ortho(-shadowBound, shadowBound, -shadowBound,
+                                   shadowBound, 0.1f, 100.0f);
         ubo.lightProj[1][1] *= -1;
 
         float angle = glm::radians(rotation);
@@ -300,38 +281,32 @@ class ShadowPassRenderer : public Renderer {
         ubo.shadowBias = shadowBias;
         ubo.enablePCF = (enablePCF) ? 1.0f : 0.0f;
 
-        std::memcpy(
-            sceneData.uniformBuffer.allocationInfo.pMappedData, &ubo,
-            sizeof(UBO)
-        );
+        std::memcpy(sceneData.uniformBuffer.allocationInfo.pMappedData, &ubo,
+                    sizeof(UBO));
     }
 
     void draw() override {
         auto &cmdBuffer = getCurrentDrawCmdBuffer();
 
-        imageLayoutTransition(
-            cmdBuffer, vk::ImageAspectFlagBits::eDepth,
-            vk::PipelineStageFlagBits::eTopOfPipe,
-            vk::PipelineStageFlagBits::eEarlyFragmentTests,
-            vk::AccessFlagBits::eNone,
-            vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal, shadowTexture.image
-        );
+        imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eDepth,
+                              vk::PipelineStageFlagBits::eTopOfPipe,
+                              vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                              vk::AccessFlagBits::eNone,
+                              vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                              vk::ImageLayout::eUndefined,
+                              vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                              shadowTexture.image);
 
         vk::RenderingAttachmentInfo shadowAttachmentInfo{
             .imageView = shadowTexture.imageView,
             .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue =
-                vk::ClearValue{
-                    .depthStencil =
-                        {
-                            .depth = 1.0f,
-                            .stencil = 0,
-                        }
-                },
+            .clearValue = vk::ClearValue{.depthStencil =
+                                             {
+                                                 .depth = 1.0f,
+                                                 .stencil = 0,
+                                             }},
         };
 
         vk::RenderingInfo shadowpassInfo{
@@ -346,17 +321,14 @@ class ShadowPassRenderer : public Renderer {
         };
 
         cmdBuffer.beginRendering(shadowpassInfo);
-        cmdBuffer.bindPipeline(
-            vk::PipelineBindPoint::eGraphics, shadowPipeline
-        );
-        cmdBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, shadowPipelineLayout, 0,
-            {sceneData.descriptorSet}, {}
-        );
+        cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                               shadowPipeline);
+        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                     shadowPipelineLayout, 0,
+                                     {sceneData.descriptorSet}, {});
         cmdBuffer.bindVertexBuffers(0, {sceneData.vertexBuffer.buffer}, {0});
-        cmdBuffer.bindIndexBuffer(
-            sceneData.indexBuffer.buffer, 0, vk::IndexType::eUint16
-        );
+        cmdBuffer.bindIndexBuffer(sceneData.indexBuffer.buffer, 0,
+                                  vk::IndexType::eUint16);
 
         cmdBuffer.setViewport(0, getDefaultViewport(shadowMapExtent));
         cmdBuffer.setScissor(0, getDefaultScissor(shadowMapExtent));
@@ -367,36 +339,31 @@ class ShadowPassRenderer : public Renderer {
             }
 
             perObjectData.model = model.model;
-            cmdBuffer.pushConstants(
-                finalImagePipelineLayout, vk::ShaderStageFlagBits::eVertex, 0,
-                sizeof(PerObjectData), &perObjectData
-            );
-            cmdBuffer.drawIndexed(
-                model.index.count, 1, model.index.startIndex,
-                model.vertex.startIndex, 0
-            );
+            cmdBuffer.pushConstants(finalImagePipelineLayout,
+                                    vk::ShaderStageFlagBits::eVertex, 0,
+                                    sizeof(PerObjectData), &perObjectData);
+            cmdBuffer.drawIndexed(model.index.count, 1, model.index.startIndex,
+                                  model.vertex.startIndex, 0);
         }
 
         cmdBuffer.endRendering();
 
-        imageLayoutTransition(
-            cmdBuffer, vk::ImageAspectFlagBits::eDepth,
-            vk::PipelineStageFlagBits::eLateFragmentTests,
-            vk::PipelineStageFlagBits::eFragmentShader,
-            vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-            vk::AccessFlagBits::eShaderRead,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal,
-            vk::ImageLayout::eDepthReadOnlyOptimal, shadowTexture.image
-        );
+        imageLayoutTransition(cmdBuffer, vk::ImageAspectFlagBits::eDepth,
+                              vk::PipelineStageFlagBits::eLateFragmentTests,
+                              vk::PipelineStageFlagBits::eFragmentShader,
+                              vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                              vk::AccessFlagBits::eShaderRead,
+                              vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                              vk::ImageLayout::eDepthReadOnlyOptimal,
+                              shadowTexture.image);
 
         vk::RenderingAttachmentInfo colorAttachmentInfo{
             .imageView = getFinalColorTexture().imageView,
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue =
-                vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}
-                },
+            .clearValue = vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f,
+                                                                   0.0f, 1.0f}},
         };
 
         vk::RenderingAttachmentInfo depthAttachmentInfo{
@@ -404,14 +371,11 @@ class ShadowPassRenderer : public Renderer {
             .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue =
-                vk::ClearValue{
-                    .depthStencil =
-                        {
-                            .depth = 1.0f,
-                            .stencil = 0,
-                        }
-                },
+            .clearValue = vk::ClearValue{.depthStencil =
+                                             {
+                                                 .depth = 1.0f,
+                                                 .stencil = 0,
+                                             }},
         };
 
         vk::RenderingInfo writeToSwapchain{
@@ -427,13 +391,11 @@ class ShadowPassRenderer : public Renderer {
         };
 
         cmdBuffer.beginRendering(writeToSwapchain);
-        cmdBuffer.bindPipeline(
-            vk::PipelineBindPoint::eGraphics, finalImagePipeline
-        );
-        cmdBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, finalImagePipelineLayout, 1,
-            {shadowDescriptorSet}, {}
-        );
+        cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                               finalImagePipeline);
+        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                     finalImagePipelineLayout, 1,
+                                     {shadowDescriptorSet}, {});
 
         auto extent = getFinalExtent();
         cmdBuffer.setViewport(0, getDefaultViewport(extent));
@@ -441,14 +403,11 @@ class ShadowPassRenderer : public Renderer {
 
         for (auto &model : sceneData.modelInfos) {
             perObjectData.model = model.model;
-            cmdBuffer.pushConstants(
-                finalImagePipelineLayout, vk::ShaderStageFlagBits::eVertex, 0,
-                sizeof(PerObjectData), &perObjectData
-            );
-            cmdBuffer.drawIndexed(
-                model.index.count, 1, model.index.startIndex,
-                model.vertex.startIndex, 0
-            );
+            cmdBuffer.pushConstants(finalImagePipelineLayout,
+                                    vk::ShaderStageFlagBits::eVertex, 0,
+                                    sizeof(PerObjectData), &perObjectData);
+            cmdBuffer.drawIndexed(model.index.count, 1, model.index.startIndex,
+                                  model.vertex.startIndex, 0);
         }
 
         cmdBuffer.endRendering();
@@ -461,12 +420,9 @@ class ShadowPassRenderer : public Renderer {
 
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight), ImGuiCond_Once);
         ImGui::SetNextWindowPos(
-            ImVec2(
-                ImGui::GetIO().DisplaySize.x - boxWidth - fontScale,
-                fontScale * 4
-            ),
-            ImGuiCond_Once
-        );
+            ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - fontScale,
+                   fontScale * 4),
+            ImGuiCond_Once);
 
         ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
@@ -474,15 +430,13 @@ class ShadowPassRenderer : public Renderer {
         ImGui::Begin("Control", nullptr, flags);
 
         ImGui::Text("Shadow Bound");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         ImGui::SliderFloat("##ShadowBound", &shadowBound, 0.1f, 10.0f);
 
         ImGui::Text("# divide for bias");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
 
         const int maxDivide = 40;
         static int numDivide = 14;
@@ -494,40 +448,31 @@ class ShadowPassRenderer : public Renderer {
         }
 
         ImGui::Text("Camera Distance");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         ImGui::SliderFloat("##Distance", &distance, 1.0f, 10.0f);
 
         ImGui::Text("Light Rotation");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         ImGui::SliderFloat("##rotation", &rotation, -180.0f, 540.0f);
 
         ImGui::Text("Light Z");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         ImGui::SliderFloat("##pz", &light.pos.z, 3.0f, 100.0f);
 
         ImGui::Checkbox("Enable PCF", &enablePCF);
         ImGui::End();
 
         float texturePrintSize = 240.0f;
-        ImGui::SetNextWindowPos(
-            ImVec2(
-                ImGui::GetIO().DisplaySize.x - boxWidth - texturePrintSize -
-                    fontScale * 3,
-                fontScale * 4
-            ),
-            ImGuiCond_Once
-        );
+        ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth -
+                                           texturePrintSize - fontScale * 3,
+                                       fontScale * 4),
+                                ImGuiCond_Once);
         ImGui::Begin("Shadow Map", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Image(
-            (ImTextureID)shadowSetForImGui,
-            ImVec2(texturePrintSize, texturePrintSize)
-        );
+        ImGui::Image((ImTextureID)shadowSetForImGui,
+                     ImVec2(texturePrintSize, texturePrintSize));
         ImGui::End();
     }
 
@@ -603,8 +548,7 @@ class ShadowPassRenderer : public Renderer {
         finalImageBuilder.depthAttachmentFormat = vk::Format::eD32Sfloat;
 
         vk::DescriptorSetLayout descriptorSetLayouts[2] = {
-            sceneData.descriptorSetLayout, shadowDescriptorSetLayout
-        };
+            sceneData.descriptorSetLayout, shadowDescriptorSetLayout};
         finalImagePipelineLayout = logicalDevice.createPipelineLayout({
             .setLayoutCount = 2,
             .pSetLayouts = descriptorSetLayouts,
@@ -624,13 +568,10 @@ class ShadowPassRenderer : public Renderer {
         uint32_t ibSize = model.getTotalIndicesSize();
 
         auto stagingBuffer = device->createBuffer();
-        stagingBuffer.allocate(
-            vbSize, vk::BufferUsageFlagBits::eTransferSrc, true
-        );
-        std::memcpy(
-            stagingBuffer.allocationInfo.pMappedData,
-            model.mesh.vertices.data(), vbSize
-        );
+        stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc,
+                               true);
+        std::memcpy(stagingBuffer.allocationInfo.pMappedData,
+                    model.mesh.vertices.data(), vbSize);
 
         auto cmdBuffer = device->allocateCommandBuffer();
         uint32_t vDstOffset = 0;
@@ -641,8 +582,7 @@ class ShadowPassRenderer : public Renderer {
         }
         cmdBuffer.copyBuffer(
             stagingBuffer.buffer, sceneData.vertexBuffer.buffer,
-            vk::BufferCopy{0, vDstOffset * sizeof(Vertex), vbSize}
-        );
+            vk::BufferCopy{0, vDstOffset * sizeof(Vertex), vbSize});
         device->flushCommandBuffer(cmdBuffer);
 
         ModelInfo modelInfo{
@@ -666,8 +606,7 @@ class ShadowPassRenderer : public Renderer {
         void *data = indexBuffer.map();
         std::memcpy(
             static_cast<uint8_t *>(data) + iDstOffset * sizeof(uint16_t),
-            model.mesh.indices.data(), ibSize
-        );
+            model.mesh.indices.data(), ibSize);
         indexBuffer.unmap();
 
         modelInfo.index.count =

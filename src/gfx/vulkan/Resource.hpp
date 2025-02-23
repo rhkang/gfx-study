@@ -12,10 +12,8 @@ struct Buffer {
     VmaAllocation allocation;
     VmaAllocationInfo allocationInfo;
 
-    void allocate(
-        vk::DeviceSize size, vk::BufferUsageFlags usage,
-        bool isPersistentMap = false
-    );
+    void allocate(vk::DeviceSize size, vk::BufferUsageFlags usage,
+                  bool isPersistentMap = false);
     void* map();
     void unmap();
     void destroy();
@@ -38,10 +36,8 @@ struct Texture {
     float minLod = 0.0f;
 
     void loadFromFile(const char* filename);
-    void allocate(
-        vk::Extent2D extent, uint32_t mipLevels, vk::Format format,
-        vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags
-    );
+    void allocate(vk::Extent2D extent, uint32_t mipLevels, vk::Format format,
+                  vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags);
     void createSampler();
     void destroy();
 };

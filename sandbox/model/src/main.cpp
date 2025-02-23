@@ -52,23 +52,19 @@ class ModelRenderer : public Renderer {
 
         static vk::VertexInputBindingDescription getBindingDescription() {
             return vk::VertexInputBindingDescription(
-                0, sizeof(Vertex), vk::VertexInputRate::eVertex
-            );
+                0, sizeof(Vertex), vk::VertexInputRate::eVertex);
         }
 
         static std::array<vk::VertexInputAttributeDescription, 3>
         getAttributeDescriptions() {
             return {
                 vk::VertexInputAttributeDescription(
-                    0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)
-                ),
+                    0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
                 vk::VertexInputAttributeDescription(
-                    1, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, uv)
-                ),
+                    1, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, uv)),
                 vk::VertexInputAttributeDescription(
                     2, 0, vk::Format::eR32G32B32A32Sfloat,
-                    offsetof(Vertex, color)
-                ),
+                    offsetof(Vertex, color)),
             };
         }
     };
@@ -86,18 +82,14 @@ class ModelRenderer : public Renderer {
         auto extent = getFinalExtent();
         depthTexture = device->createTexture();
         depthTexture.sampleCount = msaaSamples;
-        depthTexture.allocate(
-            extent, 1, vk::Format::eD32SfloatS8Uint,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment,
-            vk::ImageAspectFlagBits::eDepth
-        );
+        depthTexture.allocate(extent, 1, vk::Format::eD32SfloatS8Uint,
+                              vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                              vk::ImageAspectFlagBits::eDepth);
         msaaTexture = device->createTexture();
         msaaTexture.sampleCount = msaaSamples;
-        msaaTexture.allocate(
-            extent, 1, swapchain->format,
-            vk::ImageUsageFlagBits::eColorAttachment,
-            vk::ImageAspectFlagBits::eColor
-        );
+        msaaTexture.allocate(extent, 1, swapchain->format,
+                             vk::ImageUsageFlagBits::eColorAttachment,
+                             vk::ImageAspectFlagBits::eColor);
         msaaTexture.createSampler();
 
         prepareData();
@@ -115,24 +107,19 @@ class ModelRenderer : public Renderer {
             std::chrono::duration<double, std::milli>(currentTime - startTime)
                 .count();
 
-        ubo.model = glm::rotate(
-            glm::mat4(1.0f), (float)rotation / 90 * glm::radians(90.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f)
-        );
-        ubo.view = glm::lookAt(
-            glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f),
-            glm::vec3(0.0f, 0.0f, 1.0f)
-        );
+        ubo.model = glm::rotate(glm::mat4(1.0f),
+                                (float)rotation / 90 * glm::radians(90.0f),
+                                glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
         auto extent = getFinalExtent();
-        ubo.proj = glm::perspective(
-            glm::radians(45.0f), extent.width / (float)extent.height, 0.1f,
-            10.0f
-        );
+        ubo.proj =
+            glm::perspective(glm::radians(45.0f),
+                             extent.width / (float)extent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
-        std::memcpy(
-            uniformBuffer.allocationInfo.pMappedData, &ubo, sizeof(UBO)
-        );
+        std::memcpy(uniformBuffer.allocationInfo.pMappedData, &ubo,
+                    sizeof(UBO));
 
         auto logicalDevice = device->getLogicalDevice();
         if (needRecreateSampler) {
@@ -179,17 +166,13 @@ class ModelRenderer : public Renderer {
 
         auto extent = getFinalExtent();
         depthTexture.sampleCount = msaaSamples;
-        depthTexture.allocate(
-            extent, 1, vk::Format::eD32SfloatS8Uint,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment,
-            vk::ImageAspectFlagBits::eDepth
-        );
+        depthTexture.allocate(extent, 1, vk::Format::eD32SfloatS8Uint,
+                              vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                              vk::ImageAspectFlagBits::eDepth);
         msaaTexture.sampleCount = msaaSamples;
-        msaaTexture.allocate(
-            extent, 1, swapchain->format,
-            vk::ImageUsageFlagBits::eColorAttachment,
-            vk::ImageAspectFlagBits::eColor
-        );
+        msaaTexture.allocate(extent, 1, swapchain->format,
+                             vk::ImageUsageFlagBits::eColorAttachment,
+                             vk::ImageAspectFlagBits::eColor);
         msaaTexture.createSampler();
     }
 
@@ -216,14 +199,11 @@ class ModelRenderer : public Renderer {
             .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue =
-                vk::ClearValue{
-                    .depthStencil =
-                        {
-                            .depth = 1.0f,
-                            .stencil = 0,
-                        }
-                },
+            .clearValue = vk::ClearValue{.depthStencil =
+                                             {
+                                                 .depth = 1.0f,
+                                                 .stencil = 0,
+                                             }},
         };
 
         vk::RenderingInfo renderingInfo{
@@ -240,9 +220,8 @@ class ModelRenderer : public Renderer {
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
-            .clearValue =
-                vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}
-                },
+            .clearValue = vk::ClearColorValue{std::array<float, 4>{0.0f, 0.0f,
+                                                                   0.0f, 1.0f}},
         };
 
         bool useMultiSampling = (msaaSamples | vk::SampleCountFlagBits::e1) !=
@@ -267,13 +246,11 @@ class ModelRenderer : public Renderer {
 
         cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
         cmdBuffer.bindVertexBuffers(0, {vertexBuffer.buffer}, {0});
-        cmdBuffer.bindIndexBuffer(
-            indexBuffer.buffer, 0, vk::IndexType::eUint16
-        );
-        cmdBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, pipelineLayout, 0,
-            {uboSet, textureSet}, {}
-        );
+        cmdBuffer.bindIndexBuffer(indexBuffer.buffer, 0,
+                                  vk::IndexType::eUint16);
+        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                     pipelineLayout, 0, {uboSet, textureSet},
+                                     {});
 
         auto extent = getFinalExtent();
         cmdBuffer.setViewport(0, getDefaultViewport(extent));
@@ -291,24 +268,22 @@ class ModelRenderer : public Renderer {
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight), ImGuiCond_Once);
         ImGui::SetNextWindowPos(
             ImVec2(ImGui::GetIO().DisplaySize.x - boxWidth - 10, 40),
-            ImGuiCond_Once
-        );
+            ImGuiCond_Once);
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
+        ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
 
         ImGui::Begin("Control", nullptr, flags);
         ImGui::Text("Model Rotate");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         ImGui::SliderFloat("##", &rotation, 0.0f, 360.0f);
 
         ImGui::Separator();
 
         ImGui::Text("Min LOD");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         if (ImGui::SliderFloat("##minlod", &minLod, 0.0f, 12.0f)) {
             needRecreateSampler = true;
         }
@@ -316,15 +291,12 @@ class ModelRenderer : public Renderer {
         ImGui::Separator();
 
         ImGui::Text("MSAA Samples");
-        ImGui::SetNextItemWidth(
-            ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x * 2
-        );
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() -
+                                ImGui::GetStyle().WindowPadding.x * 2);
         const char* sampleCountOptions[] = {"1",  "2",  "4", "8",
                                             "16", "32", "64"};
-        if (ImGui::Combo(
-                "##msaa", &sampleValueIndex, sampleCountOptions,
-                IM_ARRAYSIZE(sampleCountOptions)
-            )) {
+        if (ImGui::Combo("##msaa", &sampleValueIndex, sampleCountOptions,
+                         IM_ARRAYSIZE(sampleCountOptions))) {
             if (sampleValueIndex <= maxSampleValueIndex) {
                 msaaSamples = (vk::SampleCountFlagBits)(1 << sampleValueIndex);
                 msaaResetFlag = true;
@@ -362,9 +334,8 @@ class ModelRenderer : public Renderer {
                      .front();
 
         uniformBuffer = device->createBuffer();
-        uniformBuffer.allocate(
-            sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, true
-        );
+        uniformBuffer.allocate(sizeof(UBO),
+                               vk::BufferUsageFlagBits::eUniformBuffer, true);
 
         vk::DescriptorBufferInfo bufferInfo{
             .buffer = uniformBuffer.buffer,
@@ -428,9 +399,9 @@ class ModelRenderer : public Renderer {
 
     void prepareData() {
         auto importer = Assimp::Importer();
-        const aiScene* scene = importer.ReadFile(
-            RESOURCE_DIR + std::string("viking_room.obj"), aiProcess_Triangulate
-        );
+        const aiScene* scene =
+            importer.ReadFile(RESOURCE_DIR + std::string("viking_room.obj"),
+                              aiProcess_Triangulate);
 
         std::vector<Vertex> vertices;
         std::vector<uint16_t> indices;
@@ -439,23 +410,19 @@ class ModelRenderer : public Renderer {
             aiMesh* mesh = scene->mMeshes[i];
             for (unsigned int j = 0; j < mesh->mNumVertices; j++) {
                 Vertex vertex;
-                vertex.pos = glm::vec3(
-                    mesh->mVertices[j].x, mesh->mVertices[j].y,
-                    mesh->mVertices[j].z
-                );
+                vertex.pos =
+                    glm::vec3(mesh->mVertices[j].x, mesh->mVertices[j].y,
+                              mesh->mVertices[j].z);
                 vertex.uv = mesh->mTextureCoords[0]
-                                ? glm::vec2(
-                                      mesh->mTextureCoords[0][j].x,
-                                      mesh->mTextureCoords[0][j].y
-                                  )
+                                ? glm::vec2(mesh->mTextureCoords[0][j].x,
+                                            mesh->mTextureCoords[0][j].y)
                                 : glm::vec2(0.0f, 0.0f);
-                vertex.color =
-                    mesh->mColors[0]
-                        ? glm::vec4(
-                              mesh->mColors[0][j].r, mesh->mColors[0][j].g,
-                              mesh->mColors[0][j].b, mesh->mColors[0][j].a
-                          )
-                        : glm::vec4(1.0f);
+                vertex.color = mesh->mColors[0]
+                                   ? glm::vec4(mesh->mColors[0][j].r,
+                                               mesh->mColors[0][j].g,
+                                               mesh->mColors[0][j].b,
+                                               mesh->mColors[0][j].a)
+                                   : glm::vec4(1.0f);
                 vertex.uv.y =
                     1.0f -
                     vertex.uv.y;  // obj format assume coord 0 is the bottom
@@ -474,33 +441,26 @@ class ModelRenderer : public Renderer {
         auto ibSize = sizeof(uint16_t) * indices.size();
 
         vertexBuffer = device->createBuffer();
-        vertexBuffer.allocate(
-            vbSize, vk::BufferUsageFlagBits::eVertexBuffer |
-                        vk::BufferUsageFlagBits::eTransferDst
-        );
+        vertexBuffer.allocate(vbSize,
+                              vk::BufferUsageFlagBits::eVertexBuffer |
+                                  vk::BufferUsageFlagBits::eTransferDst);
 
         auto stagingBuffer = device->createBuffer();
-        stagingBuffer.allocate(
-            vbSize, vk::BufferUsageFlagBits::eTransferSrc, true
-        );
-        std::memcpy(
-            stagingBuffer.allocationInfo.pMappedData, vertices.data(), vbSize
-        );
+        stagingBuffer.allocate(vbSize, vk::BufferUsageFlagBits::eTransferSrc,
+                               true);
+        std::memcpy(stagingBuffer.allocationInfo.pMappedData, vertices.data(),
+                    vbSize);
 
         auto cmdBuffer = device->allocateCommandBuffer();
-        cmdBuffer.copyBuffer(
-            stagingBuffer.buffer, vertexBuffer.buffer,
-            {vk::BufferCopy{0, 0, vbSize}}
-        );
+        cmdBuffer.copyBuffer(stagingBuffer.buffer, vertexBuffer.buffer,
+                             {vk::BufferCopy{0, 0, vbSize}});
         device->flushCommandBuffer(cmdBuffer);
 
         stagingBuffer.destroy();
 
         indexBuffer = device->createBuffer();
-        indexBuffer.allocate(
-            sizeof(uint16_t) * indices.size(),
-            vk::BufferUsageFlagBits::eIndexBuffer
-        );
+        indexBuffer.allocate(sizeof(uint16_t) * indices.size(),
+                             vk::BufferUsageFlagBits::eIndexBuffer);
         indexCount = static_cast<uint32_t>(indices.size());
 
         void* data = indexBuffer.map();

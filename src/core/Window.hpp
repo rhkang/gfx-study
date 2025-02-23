@@ -32,32 +32,27 @@ class EventBase {
     static EventBase* instance;
     void registerInstance() { instance = this; }
 
-    virtual void keyCallback(
-        GLFWwindow* window, int key, int scancode, int action, int mods
-    ) = 0;
-    static void keyCallbackDispatch(
-        GLFWwindow* window, int key, int scancode, int action, int mods
-    ) {
+    virtual void keyCallback(GLFWwindow* window, int key, int scancode,
+                             int action, int mods) = 0;
+    static void keyCallbackDispatch(GLFWwindow* window, int key, int scancode,
+                                    int action, int mods) {
         if (instance) {
             instance->keyCallback(window, key, scancode, action, mods);
         }
     }
 
     virtual void resizeCallback(GLFWwindow* window, int width, int height) = 0;
-    static void resizeCallbackDispatch(
-        GLFWwindow* window, int width, int height
-    ) {
+    static void resizeCallbackDispatch(GLFWwindow* window, int width,
+                                       int height) {
         if (instance) {
             instance->resizeCallback(window, width, height);
         }
     }
 
-    virtual void mouseButtonCallback(
-        GLFWwindow* window, int button, int action, int mods
-    ) = 0;
-    static void mouseButtonCallbackDispatch(
-        GLFWwindow* window, int button, int action, int mods
-    ) {
+    virtual void mouseButtonCallback(GLFWwindow* window, int button, int action,
+                                     int mods) = 0;
+    static void mouseButtonCallbackDispatch(GLFWwindow* window, int button,
+                                            int action, int mods) {
         if (instance) {
             instance->mouseButtonCallback(window, button, action, mods);
         }

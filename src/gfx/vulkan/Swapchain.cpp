@@ -8,9 +8,8 @@ Swapchain::~Swapchain() {
     device.destroySwapchainKHR(swapchain);
 }
 
-void Swapchain::create(
-    vk::Device device, vk::SurfaceKHR surface, uint32_t queueFamilyIndex
-) {
+void Swapchain::create(vk::Device device, vk::SurfaceKHR surface,
+                       uint32_t queueFamilyIndex) {
     this->device = device;
     this->surface = surface;
 
@@ -84,9 +83,8 @@ void Swapchain::recreate() {
 
 uint32_t Swapchain::acquireNextImage(vk::Semaphore semaphore) {
     uint32_t imageIndex;
-    auto result = vkAcquireNextImageKHR(
-        device, swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex
-    );
+    auto result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+                                        semaphore, VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         return UINT32_MAX;
     }

@@ -21,10 +21,8 @@ class Renderer {
         return drawCmdBuffers[currentFrame];
     }
     inline vk::Viewport getDefaultViewport(vk::Extent2D extent) {
-        return vk::Viewport(
-            0.0f, 0.0f, static_cast<float>(extent.width),
-            static_cast<float>(extent.height), 0.0f, 1.0f
-        );
+        return vk::Viewport(0.0f, 0.0f, static_cast<float>(extent.width),
+                            static_cast<float>(extent.height), 0.0f, 1.0f);
     }
     inline vk::Rect2D getDefaultScissor(vk::Extent2D extent) {
         return vk::Rect2D(vk::Offset2D(0, 0), extent);
@@ -44,7 +42,6 @@ class Renderer {
     virtual void onDestroy() {}
     virtual void onWindowResize() {}
     virtual void onSceneResize() {}
-
 
     virtual void draw() = 0;
     virtual void drawUi() {}
@@ -67,8 +64,7 @@ class Renderer {
 
     vk::AttachmentLoadOp swapchainLoadOp = vk::AttachmentLoadOp::eClear;
 
-    struct
-    {
+    struct {
         Texture colorTexture;
     } offscreenResources;
 

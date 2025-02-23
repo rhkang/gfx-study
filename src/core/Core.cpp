@@ -29,15 +29,12 @@ void Application::prepare() {
     }
 
     registerInstance();
-    glfwSetKeyCallback(
-        (GLFWwindow*)window->getHandle(), EventBase::keyCallbackDispatch
-    );
-    glfwSetWindowSizeCallback(
-        (GLFWwindow*)window->getHandle(), EventBase::resizeCallbackDispatch
-    );
-    glfwSetMouseButtonCallback(
-        (GLFWwindow*)window->getHandle(), EventBase::mouseButtonCallbackDispatch
-    );
+
+    auto windowHandle = static_cast<GLFWwindow*>(window->getHandle());
+    glfwSetKeyCallback(windowHandle, EventBase::keyCallbackDispatch);
+    glfwSetWindowSizeCallback(windowHandle, EventBase::resizeCallbackDispatch);
+    glfwSetMouseButtonCallback(windowHandle,
+                               EventBase::mouseButtonCallbackDispatch);
 
     onPrepare();
     renderer->prepare();
@@ -77,9 +74,8 @@ void Application::mainLoop() {
     }
 }
 
-void Application::keyCallback(
-    GLFWwindow* window, int key, int scancode, int action, int mods
-) {
+void Application::keyCallback(GLFWwindow* window, int key, int scancode,
+                              int action, int mods) {
     if (key == GLFW_KEY_ESCAPE) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
@@ -92,9 +88,8 @@ void Application::resizeCallback(GLFWwindow* window, int width, int height) {
     this->renderer->windowResized = true;
 }
 
-void Application::mouseButtonCallback(
-    GLFWwindow* window, int button, int action, int mods
-) {
+void Application::mouseButtonCallback(GLFWwindow* window, int button,
+                                      int action, int mods) {
     ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 }
 

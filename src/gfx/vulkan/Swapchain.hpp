@@ -8,9 +8,8 @@ class Swapchain {
     Swapchain() = default;
     ~Swapchain();
 
-    void create(
-        vk::Device device, vk::SurfaceKHR surface, uint32_t queueFamilyIndex
-    );
+    void create(vk::Device device, vk::SurfaceKHR surface,
+                uint32_t queueFamilyIndex);
     void recreate(vk::Extent2D extent);
     void recreate();
     vk::Image getImage(uint32_t index) { return images[index]; }

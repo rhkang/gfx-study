@@ -1,13 +1,14 @@
 #include "gfx/vulkan/Utils.hpp"
 
 namespace Engine {
-void imageLayoutTransition(
-    vk::CommandBuffer cmdBuffer, vk::ImageAspectFlags imageAspectFlags,
-    vk::PipelineStageFlagBits srcStageMask,
-    vk::PipelineStageFlagBits dstStageMask, vk::AccessFlags srcAccessMask,
-    vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout,
-    vk::ImageLayout newLayout, vk::Image image, uint32_t mipLevels
-) {
+void imageLayoutTransition(vk::CommandBuffer cmdBuffer,
+                           vk::ImageAspectFlags imageAspectFlags,
+                           vk::PipelineStageFlagBits srcStageMask,
+                           vk::PipelineStageFlagBits dstStageMask,
+                           vk::AccessFlags srcAccessMask,
+                           vk::AccessFlags dstAccessMask,
+                           vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
+                           vk::Image image, uint32_t mipLevels) {
     vk::ImageMemoryBarrier imageBarrier{
         .srcAccessMask = srcAccessMask,
         .dstAccessMask = dstAccessMask,
@@ -19,9 +20,8 @@ void imageLayoutTransition(
         .subresourceRange =
             vk::ImageSubresourceRange{imageAspectFlags, 0, mipLevels, 0, 1}};
 
-    cmdBuffer.pipelineBarrier(
-        srcStageMask, dstStageMask, {}, nullptr, nullptr, imageBarrier
-    );
+    cmdBuffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr,
+                              imageBarrier);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
@@ -32,7 +32,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 ) {
     if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
         LOG_ERROR("{}\n", pCallbackData->pMessage);
-    } else if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
+    } else if (messageSeverity &
+               vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
         LOG_WARN("{}\n", pCallbackData->pMessage);
     } else {
         LOG("{}\n", pCallbackData->pMessage);
