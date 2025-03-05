@@ -7,6 +7,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if (WIN32)
+    # Apply /EHsc for exception handling in Visual Studio (MSVC compiler)
+    # target_compile_options(${ENGINE_NAME} PUBLIC /EHsc /wd26495 /wd28251)
+    add_compile_options(/EHsc /wd26495 /wd28251)
+    add_compile_definitions(NOMINMAX=)
+endif()
+
 add_subdirectory(external)
 
 #######################
@@ -59,11 +66,5 @@ add_compile_definitions(RESOURCE_DIR="${CMAKE_SOURCE_DIR}/resources/")
 add_compile_definitions(SDL_MAIN_HANDLED=)
 add_compile_definitions(GLM_FORCE_RADIANS=)
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE=)
-
-if (WIN32)
-    # Apply /EHsc for exception handling in Visual Studio (MSVC compiler)
-    target_compile_options(${ENGINE_NAME} PRIVATE /EHsc /wd26495 /wd28251)
-    add_compile_definitions(NOMINMAX=)
-endif()
 
 add_subdirectory(sandbox)
