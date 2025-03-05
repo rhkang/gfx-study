@@ -1,7 +1,6 @@
 set(THIRDPARTY_DIR "thirdparty")
 
 find_package(Vulkan REQUIRED)
-find_package(SDL2 REQUIRED)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
